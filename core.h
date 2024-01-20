@@ -31,10 +31,22 @@
   if (!(_cond))       \
   debug_break()
 
+namespace detail {
+
+void panic([[maybe_unused]] int _line) {
+#if defined(THROW_EXCEPTION_ON_PANIC)
+  throw _line;
+#else
+  abort();
+#endif
+}
+
+} // namespace detail
+
 #define panic(_msg, ...)                     \
   do {                                       \
     fprintf(stderr, _msg "\n", __VA_ARGS__); \
-    abort();                                 \
+    detail::panic(__LINE__);                 \
   } while (0)
 
 #define panic_if(_cond, _msg, ...) \

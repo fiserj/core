@@ -1,35 +1,29 @@
-#include "core.h"
+#include <stdio.h> // freopen, stderr
 
-int main(int, char**) {
-  auto vals = make_slice<int>(8);
-  defer(destroy(vals));
+#include <utest.h>
 
-  for (Index i = 0; i < vals.len; i++) {
-    vals[i] = i;
-  }
+#include <core.h>
 
-  for (int i : vals) {
-    printf("%d ", i);
-  }
+UTEST(make_slice, array) {
+  int array[3] = {1, 2, 3};
 
-  append(vals, 8);
+  auto slice = make_slice(array);
 
-  for (int i : vals) {
-    printf("%d ", i);
-  }
+  ASSERT_EQ(slice.data, array);
+  ASSERT_EQ(slice.len, 3);
 
-  auto slice = vals(1, 4);
-  assert(slice.len == 2);
+  ASSERT_EQ(slice[0], 1);
+  ASSERT_EQ(slice[1], 2);
+  ASSERT_EQ(slice[2], 3);
 
-  int  rbuf[8];
-  auto ring = init_ring(make_slice(rbuf));
+  EXPECT_EXCEPTION(slice[-1], int);
+  EXPECT_EXCEPTION(slice[+4], int);
+}
 
-  push(ring, 1);
-  push(ring, 2);
+UTEST_STATE();
 
-  while (!empty(ring)) {
-    printf("%i\n", pop(ring));
-  }
+int main(int _argc, char** _argv) {
+  freopen("/dev/null", "w", stderr);
 
-  return vals[1] == 0;
+  return utest_main(_argc, _argv);
 }

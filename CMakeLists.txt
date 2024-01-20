@@ -76,6 +76,11 @@ if(WITH_TESTS)
     tests.cpp
   )
 
+  # TODO : This won't change the panic calls compiled in `core.cpp`.
+  target_compile_definitions(${NAME} PRIVATE
+    THROW_EXCEPTION_ON_PANIC=1
+  )
+
   target_include_directories(${NAME} PRIVATE
     ${utest_SOURCE_DIR}
   )
