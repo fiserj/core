@@ -1,0 +1,71 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CMake Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-Bbuild/Debug",
+        "."
+      ]
+    },
+    {
+      "label": "CMake Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-Bbuild/Release",
+        "."
+      ]
+    },
+    {
+      "label": "CMake RelMinSize",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-DCMAKE_BUILD_TYPE=RelMinSize",
+        "-Bbuild/RelMinSize",
+        "."
+      ]
+    },
+    {
+      "label": "CMake RelWithDebInfo",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+        "-DMNM_WITH_EXAMPLES=ON",
+        "-Bbuild/RelWithDebInfo",
+        "."
+      ]
+    },
+    {
+      "label": "Make All Debug",
+      "type": "shell",
+      "command": "cmake --build build/Debug",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Make All RelMinSize",
+      "type": "shell",
+      "command": "cmake --build build/RelMinSize"
+    },
+    {
+      "label": "Make All Release",
+      "type": "shell",
+      "command": "cmake --build build/Release"
+    },
+    {
+      "label": "Make All RelWithDebInfo",
+      "type": "shell",
+      "command": "cmake --build build/RelWithDebInfo"
+    }
+  ]
+}
