@@ -1,5 +1,7 @@
 #include "core.h"
 
+#include <stdlib.h> // abort, aligned_alloc, free
+
 #if (_MSC_VER)
 #  include <malloc.h> // _aligned_malloc
 #  define aligned_malloc _aligned_malloc
@@ -29,6 +31,18 @@ void copy_and_zero(void* _dst, Size _dst_size, const void* _src, Size _src_size)
 }
 
 } // anonymous namespace
+
+namespace detail {
+
+void panic_impl([[maybe_unused]] int _line) {
+#if defined(THROW_EXCEPTION_ON_PANIC)
+  throw _line;
+#else
+  abort();
+#endif
+}
+
+} // namespace detail
 
 Allocator std_alloc() {
   const static Allocator alloc = {

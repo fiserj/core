@@ -3,7 +3,6 @@
 #include <stddef.h> // ptrdiff_t, size_t
 #include <stdint.h> // uint8_t
 #include <stdio.h>  // fprintf, stderr
-#include <stdlib.h> // abort
 #include <string.h> // memcpy, memset
 
 // -----------------------------------------------------------------------------
@@ -33,20 +32,14 @@
 
 namespace detail {
 
-void panic([[maybe_unused]] int _line) {
-#if defined(THROW_EXCEPTION_ON_PANIC)
-  throw _line;
-#else
-  abort();
-#endif
-}
+void panic_impl([[maybe_unused]] int _line);
 
 } // namespace detail
 
 #define panic(_msg, ...)                     \
   do {                                       \
     fprintf(stderr, _msg "\n", __VA_ARGS__); \
-    detail::panic(__LINE__);                 \
+    detail::panic_impl(__LINE__);            \
   } while (0)
 
 #define panic_if(_cond, _msg, ...) \

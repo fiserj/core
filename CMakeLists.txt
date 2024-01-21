@@ -14,7 +14,11 @@ endif()
 
 project("Core")
 
-option(WITH_TESTS "Build core unit tests" ${PROJECT_IS_TOP_LEVEL})
+# ------------------------------------------------------------------------------
+# OPTIONS
+# ------------------------------------------------------------------------------
+
+option(CORE_WITH_TESTS "Build core unit tests" ${PROJECT_IS_TOP_LEVEL})
 
 # ------------------------------------------------------------------------------
 # LIBRARY
@@ -58,7 +62,7 @@ endif()
 # UNIT TESTS
 # ------------------------------------------------------------------------------
 
-if(WITH_TESTS)
+if(CORE_WITH_TESTS)
   include(FetchContent)
 
   FetchContent_Declare(
@@ -73,20 +77,17 @@ if(WITH_TESTS)
   set(NAME "${NAME}_tests")
 
   add_executable(${NAME}
+    core.cpp
+    core.h
     tests.cpp
   )
 
-  # TODO : This won't change the panic calls compiled in `core.cpp`.
   target_compile_definitions(${NAME} PRIVATE
     THROW_EXCEPTION_ON_PANIC=1
   )
 
   target_include_directories(${NAME} PRIVATE
     ${utest_SOURCE_DIR}
-  )
-
-  target_link_libraries(${NAME} PRIVATE
-    ${LIB_NAME}
   )
 
   if(MSVC)

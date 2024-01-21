@@ -2,7 +2,7 @@
 
 #include <utest.h>
 
-#include <core.h>
+#include "core.h"
 
 UTEST(make_slice, array) {
   int array[3] = {1, 2, 3};
