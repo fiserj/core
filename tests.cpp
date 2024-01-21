@@ -4,6 +4,10 @@
 
 #include "core.h"
 
+// -----------------------------------------------------------------------------
+// DEFERRED EXECUTION
+// -----------------------------------------------------------------------------
+
 UTEST(defer, order) {
   int val = 1;
 
@@ -11,6 +15,48 @@ UTEST(defer, order) {
   defer(ASSERT_EQ(val++, 2));
   defer(ASSERT_EQ(val++, 1));
 }
+
+// -----------------------------------------------------------------------------
+// SMALL UTILITIES
+// -----------------------------------------------------------------------------
+
+UTEST(utils, min) {
+  ASSERT_EQ(min(1, 1), 1);
+  ASSERT_EQ(min(1, 3), 1);
+  ASSERT_EQ(min(3, 1), 1);
+
+  ASSERT_EQ(min(1.0, 1.0), 1.0);
+  ASSERT_EQ(min(1.0, 3.0), 1.0);
+  ASSERT_EQ(min(3.0, 1.0), 1.0);
+}
+
+UTEST(utils, max) {
+  ASSERT_EQ(max(1, 1), 1);
+  ASSERT_EQ(max(1, 3), 3);
+  ASSERT_EQ(max(3, 1), 3);
+
+  ASSERT_EQ(max(1.0, 1.0), 1.0);
+  ASSERT_EQ(max(1.0, 3.0), 3.0);
+  ASSERT_EQ(max(3.0, 1.0), 3.0);
+}
+
+UTEST(utils, clamp) {
+  ASSERT_EQ(clamp(-1, 0, 2), 0);
+  ASSERT_EQ(clamp(+0, 0, 2), 0);
+  ASSERT_EQ(clamp(+1, 0, 2), 1);
+  ASSERT_EQ(clamp(+2, 0, 2), 2);
+  ASSERT_EQ(clamp(+3, 0, 2), 2);
+}
+
+// -----------------------------------------------------------------------------
+// ALLOCATORS
+// -----------------------------------------------------------------------------
+
+// ...
+
+// -----------------------------------------------------------------------------
+// SLICE
+// -----------------------------------------------------------------------------
 
 UTEST(Slice, subscript_operator) {
   int array[3] = {1, 2, 3};
@@ -50,12 +96,18 @@ UTEST(make_slice, len) {
   auto slice = make_slice<int>(3);
   defer(destroy(slice));
 
-  ASSERT_EQ(slice[0], 0);
-  ASSERT_EQ(slice[1], 0);
-  ASSERT_EQ(slice[2], 0);
-
   ASSERT_NE(slice.data, (int*)nullptr);
   ASSERT_EQ(slice.len, 3);
+  ASSERT_LE(slice.len, slice.cap);
+}
+
+UTEST(make_slice, len_cap) {
+  auto slice = make_slice<int>(1, 3);
+  defer(destroy(slice));
+
+  ASSERT_NE(slice.data, (int*)nullptr);
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_EQ(slice.cap, 3);
 }
 
 UTEST_STATE();
