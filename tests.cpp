@@ -4,6 +4,14 @@
 
 #include "core.h"
 
+UTEST(defer, order) {
+  int val = 1;
+
+  defer(ASSERT_EQ(val++, 3));
+  defer(ASSERT_EQ(val++, 2));
+  defer(ASSERT_EQ(val++, 1));
+}
+
 UTEST(make_slice, array) {
   int array[3] = {1, 2, 3};
 
