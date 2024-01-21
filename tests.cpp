@@ -48,6 +48,32 @@ UTEST(utils, clamp) {
   ASSERT_EQ(clamp(+3, 0, 2), 2);
 }
 
+UTEST(utils, is_power_of_two) {
+  ASSERT_TRUE(is_power_of_two(0));
+  ASSERT_TRUE(is_power_of_two(1));
+  ASSERT_TRUE(is_power_of_two(2));
+  ASSERT_TRUE(is_power_of_two(4));
+  ASSERT_TRUE(is_power_of_two(128));
+
+  ASSERT_FALSE(is_power_of_two(3));
+  ASSERT_FALSE(is_power_of_two(5));
+  ASSERT_FALSE(is_power_of_two(22));
+  ASSERT_FALSE(is_power_of_two(50));
+  ASSERT_FALSE(is_power_of_two(127));
+}
+
+UTEST(utils, align_up) {
+  ASSERT_EQ(align_up(0, 4), 0);
+  ASSERT_EQ(align_up(1, 4), 4);
+  ASSERT_EQ(align_up(2, 4), 4);
+  ASSERT_EQ(align_up(3, 4), 4);
+  ASSERT_EQ(align_up(4, 4), 4);
+
+  ASSERT_EQ(align_up(16, 32), 32);
+  ASSERT_EQ(align_up(16, 64), 64);
+  ASSERT_EQ(align_up(16, 128), 128);
+}
+
 // -----------------------------------------------------------------------------
 // ALLOCATORS
 // -----------------------------------------------------------------------------
