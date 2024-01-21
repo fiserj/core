@@ -1,6 +1,8 @@
-#include <stdio.h> // freopen, stderr
+#include <stddef.h> // uintptr_t
+#include <stdio.h>  // freopen, stderr
+#include <string.h> // memcmp
 
-#include <utest.h>
+#include <utest.h> // ASSERT_*, EXPECT_EXCEPTION, UTEST_*
 
 #include "core.h"
 
@@ -78,7 +80,17 @@ UTEST(utils, align_up) {
 // ALLOCATORS
 // -----------------------------------------------------------------------------
 
-// ...
+UTEST(std_alloc, zeroed_memory) {
+  const u8  zeros[128] = {};
+  Allocator alloc      = std_alloc();
+
+  constexpr Size size = 13;
+
+  void* mem = allocate(alloc, nullptr, 0, size, 1);
+  defer(allocate(alloc, mem, size, 0, 0));
+
+  ASSERT_EQ(memcmp(mem, zeros, size), 0);
+}
 
 // -----------------------------------------------------------------------------
 // SLICE

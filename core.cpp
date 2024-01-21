@@ -35,6 +35,8 @@
 
 namespace {
 
+constexpr size_t DEFAULT_ALIGN = 2 * sizeof(void*);
+
 constexpr Size operator""_MiB(unsigned long long _x) {
   return 1024 * 1024 * Size(_x);
 }
@@ -66,6 +68,12 @@ void panic_impl([[maybe_unused]] int _line) {
 
 } // namespace detail
 
+void* allocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align) {
+  // panic_if(!_alloc.alloc, "Allocator is missing the `alloc` function callback.");
+
+  return _alloc.alloc(_alloc.ctx, _ptr, _old, _new, _align);
+}
+
 Allocator std_alloc() {
   const static Allocator alloc = {
     .ctx   = nullptr,
@@ -80,7 +88,7 @@ Allocator std_alloc() {
       }
 
       // https://nanxiao.me/en/the-alignment-of-dynamically-allocating-memory/
-      const size_t align = max(2 * sizeof(void*), size_t(_align));
+      const size_t align = max(DEFAULT_ALIGN, size_t(_align));
       const size_t size  = align_up(size_t(_new), align);
 
       void* ptr = aligned_malloc(align, size);

@@ -181,6 +181,8 @@ Allocator& ctx_alloc();
 
 Allocator& ctx_temp_alloc();
 
+void* allocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align);
+
 namespace detail {
 
 struct ScopedAllocator : NonCopyable {
