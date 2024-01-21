@@ -81,10 +81,9 @@ UTEST(utils, align_up) {
 // -----------------------------------------------------------------------------
 
 UTEST(std_alloc, zeroed_memory) {
-  const u8  zeros[128] = {};
-  Allocator alloc      = std_alloc();
-
-  constexpr Size size = 13;
+  const u8       zeros[128] = {};
+  Allocator      alloc      = std_alloc();
+  constexpr Size size       = 13;
 
   void* mem = allocate(alloc, nullptr, 0, size, 1);
   defer(allocate(alloc, mem, size, 0, 0));
@@ -92,14 +91,46 @@ UTEST(std_alloc, zeroed_memory) {
   ASSERT_EQ(memcmp(mem, zeros, size), 0);
 }
 
+UTEST(std_alloc, alignment) {
+  Allocator       alloc    = std_alloc();
+  constexpr Size  size     = 13;
+  const uintptr_t aligns[] = {1, 4, 16, 32, 64};
+
+  // NOTE : Just because `ASSERT_EQ` spits out warnings when `%` is used.
+  const auto mod = [](auto _x, auto _y) -> Size {
+    return _x % _y;
+  };
+
+  for (auto align : aligns) {
+    void* mem = allocate(alloc, nullptr, 0, size, align);
+    defer(allocate(alloc, mem, size, 0, 0));
+
+    ASSERT_EQ(mod(uintptr_t(mem), align), 0);
+  }
+}
+
 // -----------------------------------------------------------------------------
 // SLICE
 // -----------------------------------------------------------------------------
 
-UTEST(Slice, subscript_operator) {
+UTEST(Slice, truthiness) {
   int array[3] = {1, 2, 3};
 
-  detail::Slice<int> slice = {
+  const detail::Slice<int> valid = {
+    .data = array,
+    .len  = sizeof(array) / sizeof(array[0]),
+  };
+
+  const detail::Slice<int> empty = {};
+
+  ASSERT_TRUE(valid);
+  ASSERT_FALSE(empty);
+}
+
+UTEST(Slice, element_access) {
+  int array[3] = {1, 2, 3};
+
+  const detail::Slice<int> slice = {
     .data = array,
     .len  = sizeof(array) / sizeof(array[0]),
   };
@@ -110,6 +141,23 @@ UTEST(Slice, subscript_operator) {
 
   EXPECT_EXCEPTION(slice[-1], int);
   EXPECT_EXCEPTION(slice[+4], int);
+}
+
+UTEST(Slice, subslicing) {
+  int array[3] = {1, 2, 3};
+
+  const detail::Slice<int> slice = {
+    .data = array,
+    .len  = sizeof(array) / sizeof(array[0]),
+  };
+
+  ASSERT_EQ(slice(0, 2).len, 2);
+  ASSERT_EQ(slice(_, 2).len, 2);
+  ASSERT_EQ(slice(1, _).len, 2);
+
+  EXPECT_EXCEPTION(slice(-1, 2), int);
+  EXPECT_EXCEPTION(slice(2, 1), int);
+  EXPECT_EXCEPTION(slice(_, 4), int);
 }
 
 UTEST(make_slice, data_len) {
@@ -147,6 +195,10 @@ UTEST(make_slice, len_cap) {
   ASSERT_EQ(slice.len, 1);
   ASSERT_EQ(slice.cap, 3);
 }
+
+// -----------------------------------------------------------------------------
+// MAIN
+// -----------------------------------------------------------------------------
 
 UTEST_STATE();
 

@@ -210,8 +210,8 @@ struct Slice {
   T*   data;
   Size len;
 
-  bool operator==(decltype(nullptr)) const {
-    return data == nullptr;
+  operator bool() const {
+    return data != nullptr;
   }
 
   T& operator[](Index _i) const {
