@@ -12,13 +12,13 @@ UTEST(defer, order) {
   defer(ASSERT_EQ(val++, 1));
 }
 
-UTEST(make_slice, array) {
+UTEST(Slice, subscript_operator) {
   int array[3] = {1, 2, 3};
 
-  auto slice = make_slice(array);
-
-  ASSERT_EQ(slice.data, array);
-  ASSERT_EQ(slice.len, 3);
+  detail::Slice<int> slice = {
+    .data = array,
+    .len  = sizeof(array) / sizeof(array[0]),
+  };
 
   ASSERT_EQ(slice[0], 1);
   ASSERT_EQ(slice[1], 2);
