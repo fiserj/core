@@ -3,7 +3,7 @@
 #include <stdlib.h> // abort, aligned_alloc, free
 
 #if (_MSC_VER)
-#  include <malloc.h> // _aligned_malloc
+#  include <malloc.h> // _aligned_free, _aligned_malloc
 #  define aligned_malloc _aligned_malloc
 #  define aligned_free _aligned_free
 #else
@@ -58,7 +58,10 @@ Allocator std_alloc() {
       }
 
       // https://nanxiao.me/en/the-alignment-of-dynamically-allocating-memory/
-      void* ptr = aligned_malloc(max(2 * sizeof(void*), size_t(_align)), size_t(_new));
+      const size_t align = max(2 * sizeof(void*), size_t(_align));
+      const size_t size  = align_up(size_t(_new), align);
+
+      void* ptr = aligned_malloc(align, size);
       panic_if(!ptr, "Failed to allocate %td bytes aligned to a %td-byte boundary.", _new, _align);
 
       copy_and_zero(ptr, _new, _ptr, _old);

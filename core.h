@@ -138,6 +138,11 @@ constexpr bool is_power_of_two(T _value) {
   return (_value & (_value - 1)) == 0;
 }
 
+template <typename T>
+constexpr T align_up(T _value, T _align) {
+  return (_value + _align - 1) & ~(_align - 1);
+}
+
 // -----------------------------------------------------------------------------
 // ALLOCATORS
 // -----------------------------------------------------------------------------
@@ -180,6 +185,10 @@ template <typename T>
 struct Slice {
   T*   data;
   Size len;
+
+  bool operator==(decltype(nullptr)) const {
+    return data == nullptr;
+  }
 
   T& operator[](Index _i) const {
     check_bounds(_i >= 0 && _i < len);
