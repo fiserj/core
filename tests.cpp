@@ -81,9 +81,10 @@ UTEST(utils, align_up) {
 // -----------------------------------------------------------------------------
 
 UTEST(std_alloc, zeroed_memory) {
-  const u8       zeros[128] = {};
-  Allocator      alloc      = std_alloc();
-  constexpr Size size       = 13;
+  const u8 zeros[128] = {};
+
+  Allocator      alloc = std_alloc();
+  constexpr Size size  = 13;
 
   void* mem = allocate(alloc, nullptr, 0, size, 1);
   defer(allocate(alloc, mem, size, 0, 0));
@@ -107,6 +108,29 @@ UTEST(std_alloc, alignment) {
 
     ASSERT_EQ(mod(uintptr_t(mem), align), 0);
   }
+}
+
+UTEST(Arena, make_arena) {
+  u8    buf[32] = {};
+  Arena arena   = make_arena(make_slice(buf));
+
+  ASSERT_EQ(arena.first, buf);
+  ASSERT_EQ(arena.last, buf + sizeof(buf));
+}
+
+UTEST(arena_alloc, zeroed_memory) {
+  const u8 zeros[128] = {};
+
+  u8 buf[128];
+  memset(buf, 0xff, sizeof(buf));
+
+  Arena          arena = make_arena(make_slice(buf));
+  Allocator      alloc = make_arena_alloc(arena);
+  constexpr Size size  = 13;
+
+  void* mem = allocate(alloc, nullptr, 0, size, 1);
+
+  ASSERT_EQ(memcmp(mem, zeros, size), 0);
 }
 
 // -----------------------------------------------------------------------------
