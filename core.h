@@ -175,7 +175,7 @@ struct Allocator {
   void* (*alloc)(void* _ctx, void* _ptr, Size _old, Size _new, Size _align);
 };
 
-Allocator std_alloc();
+const Allocator& std_alloc();
 
 Allocator& ctx_alloc();
 
@@ -395,11 +395,9 @@ struct Arena {
   u8* last;
 };
 
-void init_arena(Arena& _arena, Slice<u8>&& _buf);
+Arena make_arena(Slice<u8>&& _buf);
 
-void init_arena(Arena& _arena, void* _buf, Size _bytes);
-
-Allocator arena_alloc(Arena& _arena);
+Allocator make_arena_alloc(Arena& _arena);
 
 // -----------------------------------------------------------------------------
 // RING BUFFER

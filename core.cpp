@@ -74,7 +74,7 @@ void* allocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _
   return _alloc.alloc(_alloc.ctx, _ptr, _old, _new, _align);
 }
 
-Allocator std_alloc() {
+const Allocator& std_alloc() {
   const static Allocator alloc = {
     .ctx   = nullptr,
     .alloc = [](void*, void* _ptr, Size _old, Size _new, Size _align) -> void* {
@@ -118,8 +118,8 @@ struct DefaultTempAlloc {
   u8        buf[4_MiB];
 
   DefaultTempAlloc() {
-    init_arena(arena, make_slice(buf));
-    alloc = arena_alloc(arena);
+    arena = make_arena(make_slice(buf));
+    alloc = make_arena_alloc(arena);
   }
 };
 
@@ -129,16 +129,14 @@ Allocator& ctx_temp_alloc() {
   return ctx_alloc();
 }
 
-void init_arena(Arena& _arena, Slice<u8>&& _buf) {
-  _arena.first = begin(_buf);
-  _arena.last  = end(_buf);
+Arena make_arena(Slice<u8>&& _buf) {
+  return {
+    .first = begin(_buf),
+    .last  = end(_buf),
+  };
 }
 
-void init_arena(Arena& _arena, void* _buf, Size _bytes) {
-  init_arena(_arena, make_slice((u8*)_buf, _bytes));
-}
-
-Allocator arena_alloc(Arena& _arena) {
+Allocator make_arena_alloc(Arena& _arena) {
   return {
     .ctx   = &_arena,
     .alloc = [](void* _ctx, void* _ptr, Size _old, Size _new, Size _align) -> void* {
