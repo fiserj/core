@@ -359,6 +359,45 @@ UTEST(Slice, append_values) {
   ASSERT_EQ(memcmp(slice.data, values, sizeof(values)), 0);
 }
 
+UTEST(Slice, pop) {
+  auto slice = make_slice<int>(10);
+  defer(destroy(slice));
+
+  const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  copy(slice, make_slice(values));
+
+  for (int i = 9; i >= 0; i--) {
+    ASSERT_EQ(pop(slice), values[i]);
+    ASSERT_EQ(slice.len, i);
+    ASSERT_LE(slice.len, slice.cap);
+  }
+
+  EXPECT_EXCEPTION(pop(slice), int);
+}
+
+UTEST(Slice, begin_end) {
+  const int array[3] = {1, 2, 3};
+
+  auto slice = make_slice(array);
+  ASSERT_EQ(begin(slice), array);
+  ASSERT_EQ(end(slice), array + 3);
+
+  Slice<int> empty = {};
+  ASSERT_EQ(begin(empty), (int*)nullptr);
+  ASSERT_EQ(end(empty), (int*)nullptr);
+}
+
+UTEST(Slice, bytes) {
+  const int ints[3] = {};
+  ASSERT_EQ(bytes(make_slice(ints)), sizeof(ints));
+
+  const int doubles[3] = {};
+  ASSERT_EQ(bytes(make_slice(doubles)), sizeof(doubles));
+
+  Slice<int> empty = {};
+  ASSERT_EQ(bytes(empty), size_t(0));
+}
+
 // -----------------------------------------------------------------------------
 // MAIN
 // -----------------------------------------------------------------------------

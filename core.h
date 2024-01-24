@@ -399,7 +399,7 @@ void append(Slice<T, Dynamic>& _slice, const detail::Slice<Const<T>>& _values) {
 
 template <typename T>
 T& pop(Slice<T, Dynamic>& _slice) {
-  assert(_slice.len > 0);
+  check_bounds(_slice.len > 0);
   return _slice.data[--_slice.len];
 }
 
