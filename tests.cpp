@@ -7,6 +7,12 @@
 #include "core.h"
 
 // -----------------------------------------------------------------------------
+// COMMON
+// -----------------------------------------------------------------------------
+
+static const u8 ZERO_MEM[1024] = {};
+
+// -----------------------------------------------------------------------------
 // DEFERRED EXECUTION
 // -----------------------------------------------------------------------------
 
@@ -81,8 +87,6 @@ UTEST(utils, align_up) {
 // -----------------------------------------------------------------------------
 
 UTEST(std_alloc, zeroed_memory) {
-  const u8 zeros[128] = {};
-
   Allocator alloc = std_alloc();
 
   constexpr Size size = 13;
@@ -90,7 +94,7 @@ UTEST(std_alloc, zeroed_memory) {
   void* mem = allocate(alloc, nullptr, 0, size, 1);
   defer(allocate(alloc, mem, size, 0, 0));
 
-  ASSERT_EQ(memcmp(mem, zeros, size), 0);
+  ASSERT_EQ(memcmp(mem, ZERO_MEM, size), 0);
 }
 
 UTEST(std_alloc, alignment) {
@@ -122,8 +126,6 @@ UTEST(Arena, make_arena) {
 }
 
 UTEST(arena_alloc, zeroed_memory) {
-  const u8 zeros[128] = {};
-
   u8 buf[128];
   memset(buf, 0xff, sizeof(buf));
 
@@ -134,7 +136,7 @@ UTEST(arena_alloc, zeroed_memory) {
 
   void* mem = allocate(alloc, nullptr, 0, size, 1);
 
-  ASSERT_EQ(memcmp(mem, zeros, size), 0);
+  ASSERT_EQ(memcmp(mem, ZERO_MEM, size), 0);
 }
 
 UTEST(arena_alloc, alignment) {
@@ -278,20 +280,19 @@ UTEST(Slice, reserve) {
 }
 
 UTEST(Slice, resize) {
-  const int  values[10] = {0, 1, 2};
-  const int* zeros      = values + 3;
+  const int values[10] = {0, 1, 2};
 
   auto slice = make_slice<int>(1);
   defer(destroy(slice));
 
   ASSERT_EQ(slice.len, 1);
   ASSERT_LE(slice.len, slice.cap);
-  ASSERT_EQ(memcmp(slice.data, zeros, 1 * sizeof(int)), 0);
+  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 1 * sizeof(int)), 0);
 
   resize(slice, 3);
   ASSERT_EQ(slice.len, 3);
   ASSERT_LE(slice.len, slice.cap);
-  ASSERT_EQ(memcmp(slice.data, zeros, 3 * sizeof(int)), 0);
+  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 3 * sizeof(int)), 0);
 
   slice[1] = 1;
   slice[2] = 2;
@@ -305,12 +306,12 @@ UTEST(Slice, resize) {
   resize(slice, 1);
   ASSERT_EQ(slice.len, 1);
   ASSERT_LE(slice.len, slice.cap);
-  ASSERT_EQ(memcmp(slice.data, zeros, 1 * sizeof(int)), 0);
+  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 1 * sizeof(int)), 0);
 
   resize(slice, 3);
   ASSERT_EQ(slice.len, 3);
   ASSERT_LE(slice.len, slice.cap);
-  ASSERT_EQ(memcmp(slice.data, zeros, 3 * sizeof(int)), 0);
+  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 3 * sizeof(int)), 0);
 }
 
 // -----------------------------------------------------------------------------
