@@ -158,6 +158,17 @@ UTEST(arena_alloc, alignment) {
   }
 }
 
+UTEST(arena_alloc, out_of_memory) {
+  u8 buf[128];
+
+  Arena     arena = make_arena(make_slice(buf));
+  Allocator alloc = make_arena_alloc(arena);
+
+  constexpr Size size = sizeof(buf) + 1;
+
+  EXPECT_EXCEPTION(allocate(alloc, nullptr, 0, size, 1), int);
+}
+
 // -----------------------------------------------------------------------------
 // SLICE
 // -----------------------------------------------------------------------------
