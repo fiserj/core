@@ -393,7 +393,8 @@ void append(Slice<T, Dynamic>& _slice, const detail::Slice<Const<T>>& _values) {
     reserve(_slice, detail::next_cap(_slice.cap, len));
   }
 
-  copy(_slice(low, _), _values);
+  _slice.len = len;
+  copy(_slice(low, len), _values);
 }
 
 template <typename T>

@@ -335,6 +335,30 @@ UTEST(Slice, copy) {
   ASSERT_EQ(small, src[0]);
 }
 
+UTEST(Slice, append_value) {
+  const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+  auto slice = make_slice<int>(Size(0), 1);
+  defer(destroy(slice));
+
+  for (int i = 0; i < 10; i++) {
+    append(slice, values[i]);
+    ASSERT_EQ(slice.len, i + 1);
+    ASSERT_LE(slice.len, slice.cap);
+    ASSERT_EQ(memcmp(slice.data, values, i * sizeof(int)), 0);
+  }
+}
+
+UTEST(Slice, append_values) {
+  const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+  auto slice = make_slice<int>(1);
+  defer(destroy(slice));
+
+  append(slice, make_slice(values + 1, 9));
+  ASSERT_EQ(memcmp(slice.data, values, sizeof(values)), 0);
+}
+
 // -----------------------------------------------------------------------------
 // MAIN
 // -----------------------------------------------------------------------------
