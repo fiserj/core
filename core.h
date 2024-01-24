@@ -104,6 +104,29 @@ struct OmittedTag {};
 constexpr OmittedTag _;
 
 // -----------------------------------------------------------------------------
+// TYPE TRAITS
+// -----------------------------------------------------------------------------
+
+namespace detail {
+
+template <typename T>
+struct RemoveConst {
+  using Type = T;
+};
+template <typename T>
+struct RemoveConst<const T> {
+  using Type = T;
+};
+
+} // namespace detail
+
+template <typename T>
+using NonConst = typename detail::RemoveConst<T>::Type;
+
+template <typename T>
+using Const = const typename detail::RemoveConst<T>::Type;
+
+// -----------------------------------------------------------------------------
 // NON COPYABLE BASE
 // -----------------------------------------------------------------------------
 
@@ -212,6 +235,13 @@ struct Slice {
 
   operator bool() const {
     return data != nullptr;
+  }
+
+  operator Slice<Const<T>>() const {
+    return {
+      .data = data,
+      .len  = len,
+    };
   }
 
   T& operator[](Index _i) const {
@@ -341,7 +371,7 @@ void resize(Slice<T, Dynamic>& _slice, Size _len) {
 }
 
 template <typename T>
-void copy(const detail::Slice<T>& _dst, const detail::Slice<T>& _src) {
+void copy(const detail::Slice<T>& _dst, const detail::Slice<Const<T>>& _src) {
   memcpy(_dst.data, _src.data, size_t(min(_dst.len, _src.len)) * sizeof(T));
 }
 
@@ -355,7 +385,7 @@ void append(Slice<T, Dynamic>& _slice, const T& _value) {
 }
 
 template <typename T>
-void append(Slice<T, Dynamic>& _slice, const detail::Slice<T>& _values) {
+void append(Slice<T, Dynamic>& _slice, const detail::Slice<Const<T>>& _values) {
   const Size low = _slice.len;
   const Size len = _slice.len + _values.len;
 
