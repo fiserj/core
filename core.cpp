@@ -22,6 +22,8 @@
 
 #include "core.h"
 
+#include <stdarg.h> // va_*, vsnprintf
+#include <stdio.h>  // fprintf, stderr
 #include <stdlib.h> // abort, aligned_alloc, free
 
 #if (_MSC_VER)
@@ -58,7 +60,16 @@ void copy_and_zero(void* _dst, Size _dst_size, const void* _src, Size _src_size)
 
 namespace detail {
 
-void panic_impl([[maybe_unused]] int _line) {
+void panic_impl(int _line, const char* _msg, ...) {
+  char buf[1024] = {};
+
+  va_list args;
+  va_start(args, _msg);
+  (void)vsnprintf(buf, sizeof(buf), _msg, args);
+  va_end(args);
+
+  fprintf(stderr, "[core:%i] %s\n", _line, buf);
+
 #if defined(THROW_EXCEPTION_ON_PANIC)
   throw _line;
 #else
@@ -69,8 +80,7 @@ void panic_impl([[maybe_unused]] int _line) {
 } // namespace detail
 
 void* allocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align) {
-  // panic_if(!_alloc.alloc, "Allocator is missing the `alloc` function callback.");
-
+  panic_if(!_alloc.alloc, "Allocator is missing the `alloc` function callback.");
   return _alloc.alloc(_alloc.ctx, _ptr, _old, _new, _align);
 }
 

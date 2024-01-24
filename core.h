@@ -23,8 +23,7 @@
 #pragma once
 
 #include <stddef.h> // ptrdiff_t, size_t
-#include <stdint.h> // uint8_t
-#include <stdio.h>  // fprintf, stderr
+#include <stdint.h> // *int*_t
 #include <string.h> // memcpy, memset
 
 // -----------------------------------------------------------------------------
@@ -54,19 +53,18 @@
 
 namespace detail {
 
-void panic_impl([[maybe_unused]] int _line);
+void panic_impl(int _line, const char* _msg, ...);
 
 } // namespace detail
 
-#define panic(_msg, ...)                     \
-  do {                                       \
-    fprintf(stderr, _msg "\n", __VA_ARGS__); \
-    detail::panic_impl(__LINE__);            \
+#define panic(...)                             \
+  do {                                         \
+    detail::panic_impl(__LINE__, __VA_ARGS__); \
   } while (0)
 
-#define panic_if(_cond, _msg, ...) \
-  if (_cond)                       \
-  panic(_msg, __VA_ARGS__)
+#define panic_if(_cond, ...) \
+  if (_cond)                 \
+  panic(__VA_ARGS__)
 
 #if (NO_BOUNDS_CHECK)
 #  define check_bounds(_cond) ((void)0)
