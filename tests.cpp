@@ -220,7 +220,7 @@ UTEST(Slice, subslicing) {
   EXPECT_EXCEPTION(slice(_, 4), int);
 }
 
-UTEST(make_slice, data_len) {
+UTEST(Slice, make_slice_data_len) {
   int val = 1;
 
   auto slice = make_slice(&val, 1);
@@ -229,7 +229,7 @@ UTEST(make_slice, data_len) {
   ASSERT_EQ(slice.len, 1);
 }
 
-UTEST(make_slice, array) {
+UTEST(Slice, make_slice_array) {
   int array[3] = {1, 2, 3};
 
   auto slice = make_slice(array);
@@ -238,7 +238,7 @@ UTEST(make_slice, array) {
   ASSERT_EQ(slice.len, 3);
 }
 
-UTEST(make_slice, len) {
+UTEST(Slice, make_slice_len) {
   auto slice = make_slice<int>(3);
   defer(destroy(slice));
 
@@ -247,7 +247,7 @@ UTEST(make_slice, len) {
   ASSERT_LE(slice.len, slice.cap);
 }
 
-UTEST(make_slice, len_cap) {
+UTEST(Slice, make_slice_len_cap) {
   auto slice = make_slice<int>(1, 3);
   defer(destroy(slice));
 
