@@ -314,6 +314,27 @@ UTEST(Slice, resize) {
   ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 3 * sizeof(int)), 0);
 }
 
+UTEST(Slice, copy) {
+  auto src = make_slice<int>(3);
+  defer(destroy(src));
+  src[0] = 1;
+  src[1] = 2;
+  src[2] = 3;
+
+  auto dst = make_slice<int>(3);
+  defer(destroy(dst));
+  copy(dst, src);
+  ASSERT_EQ(memcmp(src.data, dst.data, 3 * sizeof(int)), 0);
+
+  int array[3] = {};
+  copy(make_slice(array), src);
+  ASSERT_EQ(memcmp(src.data, array, 3 * sizeof(int)), 0);
+
+  int small = 0;
+  copy(make_slice(&small, 1), src);
+  ASSERT_EQ(small, src[0]);
+}
+
 // -----------------------------------------------------------------------------
 // MAIN
 // -----------------------------------------------------------------------------

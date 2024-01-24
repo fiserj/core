@@ -341,7 +341,7 @@ void resize(Slice<T, Dynamic>& _slice, Size _len) {
 }
 
 template <typename T>
-void copy(detail::Slice<T>& _dst, const detail::Slice<T>& _src) {
+void copy(const detail::Slice<T>& _dst, const detail::Slice<T>& _src) {
   memcpy(_dst.data, _src.data, size_t(min(_dst.len, _src.len)) * sizeof(T));
 }
 
