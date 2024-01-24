@@ -1,6 +1,6 @@
 #include <stddef.h> // uintptr_t
 #include <stdio.h>  // freopen, stderr
-#include <string.h> // memcmp
+#include <string.h> // memcmp, memset
 
 #include <utest.h> // ASSERT_*, EXPECT_EXCEPTION, UTEST_*
 
@@ -254,6 +254,63 @@ UTEST(Slice, make_slice_len_cap) {
   ASSERT_NE(slice.data, (int*)nullptr);
   ASSERT_EQ(slice.len, 1);
   ASSERT_EQ(slice.cap, 3);
+}
+
+UTEST(Slice, reserve) {
+  auto slice = make_slice<int>(1, 2);
+  defer(destroy(slice));
+
+  slice[0] = 10;
+
+  ASSERT_EQ(slice.cap, 2);
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_EQ(slice[0], 10);
+
+  reserve(slice, 6);
+  ASSERT_GE(slice.cap, 6);
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_EQ(slice[0], 10);
+
+  reserve(slice, 25);
+  ASSERT_GE(slice.cap, 25);
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_EQ(slice[0], 10);
+}
+
+UTEST(Slice, resize) {
+  const int  values[10] = {0, 1, 2};
+  const int* zeros      = values + 3;
+
+  auto slice = make_slice<int>(1);
+  defer(destroy(slice));
+
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_LE(slice.len, slice.cap);
+  ASSERT_EQ(memcmp(slice.data, zeros, 1 * sizeof(int)), 0);
+
+  resize(slice, 3);
+  ASSERT_EQ(slice.len, 3);
+  ASSERT_LE(slice.len, slice.cap);
+  ASSERT_EQ(memcmp(slice.data, zeros, 3 * sizeof(int)), 0);
+
+  slice[1] = 1;
+  slice[2] = 2;
+  ASSERT_EQ(memcmp(slice.data, values, 3 * sizeof(int)), 0);
+
+  resize(slice, 10);
+  ASSERT_EQ(slice.len, 10);
+  ASSERT_LE(slice.len, slice.cap);
+  ASSERT_EQ(memcmp(slice.data, values, 10 * sizeof(int)), 0);
+
+  resize(slice, 1);
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_LE(slice.len, slice.cap);
+  ASSERT_EQ(memcmp(slice.data, zeros, 1 * sizeof(int)), 0);
+
+  resize(slice, 3);
+  ASSERT_EQ(slice.len, 3);
+  ASSERT_LE(slice.len, slice.cap);
+  ASSERT_EQ(memcmp(slice.data, zeros, 3 * sizeof(int)), 0);
 }
 
 // -----------------------------------------------------------------------------

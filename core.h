@@ -331,12 +331,13 @@ void resize(Slice<T, Dynamic>& _slice, Size _len) {
   }
 
   if (_len <= _slice.cap) {
-    memset(_slice.data + _slice.len, 0, size_t(_len - _slice.len));
+    memset(_slice.data + _slice.len, 0, size_t(_len - _slice.len) * sizeof(T));
     _slice.len = _len;
     return;
   }
 
   reserve(_slice, detail::next_cap(_slice.cap, _len));
+  _slice.len = _len;
 }
 
 template <typename T>
