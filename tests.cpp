@@ -83,8 +83,9 @@ UTEST(utils, align_up) {
 UTEST(std_alloc, zeroed_memory) {
   const u8 zeros[128] = {};
 
-  Allocator      alloc = std_alloc();
-  constexpr Size size  = 13;
+  Allocator alloc = std_alloc();
+
+  constexpr Size size = 13;
 
   void* mem = allocate(alloc, nullptr, 0, size, 1);
   defer(allocate(alloc, mem, size, 0, 0));
@@ -93,7 +94,8 @@ UTEST(std_alloc, zeroed_memory) {
 }
 
 UTEST(std_alloc, alignment) {
-  Allocator       alloc    = std_alloc();
+  Allocator alloc = std_alloc();
+
   constexpr Size  size     = 13;
   const uintptr_t aligns[] = {1, 4, 16, 32, 64};
 
@@ -111,8 +113,9 @@ UTEST(std_alloc, alignment) {
 }
 
 UTEST(Arena, make_arena) {
-  u8    buf[32] = {};
-  Arena arena   = make_arena(make_slice(buf));
+  u8 buf[32] = {};
+
+  Arena arena = make_arena(make_slice(buf));
 
   ASSERT_EQ(arena.first, buf);
   ASSERT_EQ(arena.last, buf + sizeof(buf));
@@ -124,13 +127,35 @@ UTEST(arena_alloc, zeroed_memory) {
   u8 buf[128];
   memset(buf, 0xff, sizeof(buf));
 
-  Arena          arena = make_arena(make_slice(buf));
-  Allocator      alloc = make_arena_alloc(arena);
-  constexpr Size size  = 13;
+  Arena     arena = make_arena(make_slice(buf));
+  Allocator alloc = make_arena_alloc(arena);
+
+  constexpr Size size = 13;
 
   void* mem = allocate(alloc, nullptr, 0, size, 1);
 
   ASSERT_EQ(memcmp(mem, zeros, size), 0);
+}
+
+UTEST(arena_alloc, alignment) {
+  u8 buf[128];
+
+  constexpr Size  size     = 13;
+  const uintptr_t aligns[] = {1, 4, 16, 32, 64};
+
+  // NOTE : Just because `ASSERT_EQ` spits out warnings when `%` is used.
+  const auto mod = [](auto _x, auto _y) -> Size {
+    return _x % _y;
+  };
+
+  for (auto align : aligns) {
+    Arena     arena = make_arena(make_slice(buf));
+    Allocator alloc = make_arena_alloc(arena);
+
+    void* mem = allocate(alloc, nullptr, 0, size, align);
+
+    ASSERT_EQ(mod(uintptr_t(mem), align), 0);
+  }
 }
 
 // -----------------------------------------------------------------------------
