@@ -28,11 +28,11 @@
 
 #if (_MSC_VER)
 #  include <malloc.h> // _aligned_free, _aligned_malloc
-#  define aligned_malloc _aligned_malloc
-#  define aligned_free _aligned_free
+#  define aligned_malloc(_size, _align) _aligned_malloc(_size, _align)
+#  define aligned_free(_ptr) _aligned_free(_ptr)
 #else
-#  define aligned_malloc aligned_alloc
-#  define aligned_free free
+#  define aligned_malloc(_size, _align) aligned_alloc(_align,  _size) // Not a typo!
+#  define aligned_free(_ptr) free(_ptr)
 #endif
 
 namespace {
@@ -101,7 +101,7 @@ const Allocator& std_alloc() {
       const size_t align = max(DEFAULT_ALIGN, size_t(_align));
       const size_t size  = align_up(size_t(_new), align);
 
-      void* ptr = aligned_malloc(align, size);
+      void* ptr = aligned_malloc(size, align);
       panic_if(!ptr, "Failed to allocate %td bytes aligned to a %td-byte boundary.", _new, _align);
 
       copy_and_zero(ptr, _new, _ptr, _old);

@@ -409,7 +409,12 @@ UTEST(Slice, bytes) {
 UTEST_STATE();
 
 int main(int _argc, char** _argv) {
-  freopen("/dev/null", "w", stderr);
+#if _WIN32
+  auto f = freopen("NUL", "w", stderr);
+#else
+  auto f = freopen("/dev/null", "w", stderr);
+#endif
+  defer(if (f) fclose(f));
 
   return utest_main(_argc, _argv);
 }
