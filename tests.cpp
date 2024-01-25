@@ -210,11 +210,14 @@ UTEST(Slice, element_access) {
 }
 
 UTEST(Slice, subslicing) {
-  int array[3] = {1, 2, 3};
-
-  const detail::Slice<int> slice = {
-    .data = array,
-    .len  = sizeof(array) / sizeof(array[0]),
+  // GCC is too smart and realizes we're effectively trying to do `ZERO_MEM[-1]`
+  // in one of the tests (with the negative low index).
+  //
+  // On some GCC versions, `#pragma GCC diagnostic ignored "-Warray-bounds"`
+  // is still ignored, so instead, we point the slice's start to `ZERO_MEM + 1`.
+  const detail::Slice<const u8> slice = {
+    .data = ZERO_MEM + 1,
+    .len  = 3,
   };
 
   ASSERT_EQ(slice(0, 2).len, 2);
