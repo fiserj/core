@@ -158,16 +158,12 @@ Allocator make_arena_alloc(Arena& _arena) {
       }
 
       Arena& arena = *(Arena*)_ctx;
-
-      const Size available = arena.last - arena.first;
-      const Size padding   = -uintptr_t(arena.first) & (_align - 1);
+      u8*    ptr   = align_up(arena.first, _align);
 
       // TODO : Runtime-defined behavior instead?
-      panic_if(_new > available - padding, "Failed to allocate %td bytes aligned to a %td-byte boundary.", _new, _align);
+      panic_if(ptr + _new > arena.last, "Failed to allocate %td bytes aligned to a %td-byte boundary.", _new, _align);
 
-      u8* ptr = arena.first + padding;
-      arena.first += padding + _new;
-
+      arena.first = ptr + _new;
       copy_and_zero(ptr, _new, _ptr, _old);
 
       return ptr;

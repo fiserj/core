@@ -1,3 +1,7 @@
+#if _MSC_VER
+#  define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stddef.h> // uintptr_t
 #include <stdio.h>  // freopen, stderr
 #include <string.h> // memcmp, memset

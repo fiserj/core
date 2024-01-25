@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <stddef.h> // ptrdiff_t, size_t
+#include <stddef.h> // ptrdiff_t, size_t, uintptr_t
 #include <stdint.h> // *int*_t
 #include <string.h> // memcpy, memset
 
@@ -181,9 +181,23 @@ constexpr bool is_power_of_two(T _value) {
   return (_value & (_value - 1)) == 0;
 }
 
-template <typename T>
-constexpr T align_up(T _value, T _align) {
+template <typename T, typename A>
+constexpr T align_up(T _value, A _align) {
   return (_value + _align - 1) & ~(_align - 1);
+}
+
+template <typename T, typename A>
+constexpr T* align_up(T* _ptr, A _align) {
+  union Conv {
+    T*        ptr;
+    uintptr_t addr;
+  };
+
+  Conv conv;
+  conv.ptr  = _ptr;
+  conv.addr = align_up(conv.addr, _align);
+
+  return conv.ptr;
 }
 
 // -----------------------------------------------------------------------------
