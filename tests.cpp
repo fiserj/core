@@ -174,6 +174,7 @@ UTEST(arena_alloc, out_of_memory) {
   constexpr Size size = sizeof(buf) + 1;
 
   EXPECT_EXCEPTION(allocate(alloc, nullptr, 0, size, 1), int);
+  ASSERT_EQ(allocate(alloc, nullptr, 0, size, 1, Allocator::NO_PANIC), (void*)nullptr);
 }
 
 // -----------------------------------------------------------------------------
