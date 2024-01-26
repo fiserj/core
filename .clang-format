@@ -6,6 +6,8 @@ AlignConsecutiveAssignments: true
 
 AlignConsecutiveDeclarations: true
 
+AlignConsecutiveMacros: true
+
 AlignEscapedNewlines: Left
 
 AlignOperands: false
