@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <stddef.h> // ptrdiff_t, size_t, uintptr_t
-#include <stdint.h> // *int*_t
+#include <stddef.h> // ptrdiff_t, size_t
+#include <stdint.h> // *int*_t, uintptr_t
 #include <string.h> // memcpy, memset
 
 // -----------------------------------------------------------------------------
