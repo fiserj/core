@@ -406,6 +406,51 @@ UTEST(Slice, bytes) {
 }
 
 // -----------------------------------------------------------------------------
+// RING BUFFER
+// -----------------------------------------------------------------------------
+
+UTEST(Ring, make_ring) {
+  auto ring = make_ring(make_slice(ZERO_MEM));
+
+  ASSERT_EQ(ring.buf.data, ZERO_MEM);
+  ASSERT_EQ(ring.buf.len, Size(sizeof(ZERO_MEM)));
+  ASSERT_EQ(ring.head, 0);
+  ASSERT_EQ(ring.tail, 0);
+}
+
+UTEST(Ring, empty) {
+  auto ring = make_ring(make_slice(ZERO_MEM));
+
+  ASSERT_TRUE(empty(ring));
+}
+
+UTEST(Ring, push) {
+  int  buf[3] = {};
+  auto ring   = make_ring(make_slice(buf));
+
+  push(ring, 1);
+  ASSERT_FALSE(empty(ring));
+
+  push(ring, 2);
+  ASSERT_FALSE(empty(ring));
+
+  EXPECT_EXCEPTION(push(ring, 3), int);
+}
+
+UTEST(Ring, pop) {
+  int  buf[3] = {};
+  auto ring   = make_ring(make_slice(buf));
+
+  push(ring, 1);
+  push(ring, 2);
+
+  ASSERT_EQ(pop(ring), 1);
+  ASSERT_EQ(pop(ring), 2);
+
+  EXPECT_EXCEPTION(pop(ring), int);
+}
+
+// -----------------------------------------------------------------------------
 // MAIN
 // -----------------------------------------------------------------------------
 

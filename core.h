@@ -455,7 +455,7 @@ struct Ring {
 };
 
 template <typename T>
-Ring<T> init_ring(detail::Slice<T>&& _buf) {
+Ring<T> make_ring(detail::Slice<T>&& _buf) {
   Ring<T> ring;
   ring.buf  = {{_buf.data, _buf.len}};
   ring.head = 0;
