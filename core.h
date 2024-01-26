@@ -442,8 +442,9 @@ size_t bytes(const detail::Slice<T>& _slice) {
 // -----------------------------------------------------------------------------
 
 struct Arena {
-  u8* first;
-  u8* last;
+  u8*  data;
+  Size head;
+  Size cap;
 };
 
 Arena make_arena(Slice<u8>&& _buf);

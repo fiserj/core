@@ -125,8 +125,9 @@ UTEST(Arena, make_arena) {
 
   Arena arena = make_arena(make_slice(buf));
 
-  ASSERT_EQ(arena.first, buf);
-  ASSERT_EQ(arena.last, buf + sizeof(buf));
+  ASSERT_EQ(arena.data, buf);
+  ASSERT_EQ(arena.head, 0);
+  ASSERT_EQ(arena.cap, Size(sizeof(buf)));
 }
 
 UTEST(arena_alloc, zeroed_memory) {

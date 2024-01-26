@@ -43,7 +43,7 @@ constexpr Size operator""_MiB(unsigned long long _x) {
   return 1024 * 1024 * Size(_x);
 }
 
-void copy_and_zero(void* _dst, Size _dst_size, const void* _src, Size _src_size) {
+void copy(void* _dst, Size _dst_size, const void* _src, Size _src_size, bool _zero_mem) {
   assert(_src_size >= 0);
   assert(_src_size == 0 || _src);
 
@@ -51,7 +51,7 @@ void copy_and_zero(void* _dst, Size _dst_size, const void* _src, Size _src_size)
     memcpy(_dst, _src, size_t(_src_size));
   }
 
-  if (_dst_size > _src_size) {
+  if (_zero_mem && _dst_size > _src_size) {
     memset((u8*)_dst + _src_size, 0, size_t(_dst_size - _src_size));
   }
 }
@@ -87,10 +87,12 @@ void* allocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _
 const Allocator& std_alloc() {
   const static Allocator alloc = {
     .ctx   = nullptr,
-    .alloc = [](void*, void* _ptr, Size _old, Size _new, Size _align, [[maybe_unused]] u8 _flags) -> void* {
+    .alloc = [](void*, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
       assert(_old >= 0);
       assert(_new >= 0);
       assert(is_power_of_two(_align));
+
+      panic_if(_flags & Allocator::FREE_ALL, "std_alloc() doesn't support FREE_ALL mode.");
 
       if (_new <= 0) {
         aligned_free(_ptr);
@@ -102,9 +104,12 @@ const Allocator& std_alloc() {
       const size_t size  = align_up(size_t(_new), align);
 
       void* ptr = aligned_malloc(size, align);
-      panic_if(!ptr, "Failed to allocate %td bytes aligned to a %td-byte boundary.", _new, _align);
+      if (!ptr) {
+        panic_if(!(_flags & Allocator::NO_PANIC), "Failed to allocate %td bytes aligned to a %td-byte boundary.", _new, _align);
+        return nullptr;
+      }
 
-      copy_and_zero(ptr, _new, _ptr, _old);
+      copy(ptr, _new, _ptr, _old, !(_flags & Allocator::NON_ZERO));
 
       if (_ptr) {
         aligned_free(_ptr);
@@ -141,30 +146,40 @@ Allocator& ctx_temp_alloc() {
 
 Arena make_arena(Slice<u8>&& _buf) {
   return {
-    .first = begin(_buf),
-    .last  = end(_buf),
+    .data = _buf.data,
+    .head = 0,
+    .cap  = _buf.len,
   };
 }
 
 Allocator make_arena_alloc(Arena& _arena) {
   return {
     .ctx   = &_arena,
-    .alloc = [](void* _ctx, void* _ptr, Size _old, Size _new, Size _align, [[maybe_unused]] u8 _flags) -> void* {
+    .alloc = [](void* _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
       assert(_ctx);
       assert(is_power_of_two(_align));
+
+      Arena& arena = *(Arena*)_ctx;
+
+      if (_flags & Allocator::FREE_ALL) {
+        arena.head = 0;
+        return nullptr;
+      }
 
       if (_new <= 0) {
         return nullptr;
       }
 
-      Arena& arena = *(Arena*)_ctx;
-      u8*    ptr   = align_up(arena.first, _align);
+      Size offset = align_up(arena.data + arena.head, _align) - arena.data;
+      if (offset + _new > arena.cap) {
+        panic_if(!(_flags & Allocator::NO_PANIC), "Failed to allocate %td bytes aligned to a %td-byte boundary.", _new, _align);
+        return nullptr;
+      }
 
-      // TODO : Runtime-defined behavior instead?
-      panic_if(ptr + _new > arena.last, "Failed to allocate %td bytes aligned to a %td-byte boundary.", _new, _align);
+      u8* ptr    = arena.data + offset;
+      arena.head = offset + _new;
 
-      arena.first = ptr + _new;
-      copy_and_zero(ptr, _new, _ptr, _old);
+      copy(ptr, _new, _ptr, _old, !(_flags & Allocator::NON_ZERO));
 
       return ptr;
     }};
