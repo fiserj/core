@@ -104,6 +104,14 @@ void free(void* _ptr, Size _size) {
   free(ctx_alloc(), _ptr, _size);
 }
 
+void free_all(const Allocator& _alloc) {
+  (void)reallocate(_alloc, nullptr, 0, 0, Allocator::FREE_ALL);
+}
+
+void free_all() {
+  free_all(ctx_alloc());
+}
+
 const Allocator& std_alloc() {
   const static Allocator alloc = {
     .ctx   = nullptr,

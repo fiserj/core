@@ -235,6 +235,10 @@ void free(const Allocator& _alloc, void* _ptr, Size _size);
 
 void free(void* _ptr, Size _size);
 
+void free_all(const Allocator& _alloc);
+
+void free_all();
+
 namespace detail {
 
 struct ScopedAllocator : NonCopyable {
