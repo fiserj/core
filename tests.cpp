@@ -95,8 +95,8 @@ UTEST(std_alloc, zeroed_memory) {
 
   constexpr Size size = 13;
 
-  void* mem = allocate(alloc, nullptr, 0, size, 1);
-  defer(allocate(alloc, mem, size, 0, 0));
+  void* mem = reallocate(alloc, nullptr, 0, size, 1);
+  defer(reallocate(alloc, mem, size, 0, 0));
 
   ASSERT_EQ(memcmp(mem, ZERO_MEM, size), 0);
 }
@@ -113,8 +113,8 @@ UTEST(std_alloc, alignment) {
   };
 
   for (auto align : aligns) {
-    void* mem = allocate(alloc, nullptr, 0, size, align);
-    defer(allocate(alloc, mem, size, 0, 0));
+    void* mem = reallocate(alloc, nullptr, 0, size, align);
+    defer(reallocate(alloc, mem, size, 0, 0));
 
     ASSERT_EQ(mod(uintptr_t(mem), align), 0);
   }
@@ -139,7 +139,7 @@ UTEST(arena_alloc, zeroed_memory) {
 
   constexpr Size size = 13;
 
-  void* mem = allocate(alloc, nullptr, 0, size, 1);
+  void* mem = reallocate(alloc, nullptr, 0, size, 1);
 
   ASSERT_EQ(memcmp(mem, ZERO_MEM, size), 0);
 }
@@ -159,7 +159,7 @@ UTEST(arena_alloc, alignment) {
     Arena     arena = make_arena(make_slice(buf));
     Allocator alloc = make_arena_alloc(arena);
 
-    void* mem = allocate(alloc, nullptr, 0, size, align);
+    void* mem = reallocate(alloc, nullptr, 0, size, align);
 
     ASSERT_EQ(mod(uintptr_t(mem), align), 0);
   }
@@ -173,8 +173,8 @@ UTEST(arena_alloc, out_of_memory) {
 
   constexpr Size size = sizeof(buf) + 1;
 
-  EXPECT_EXCEPTION(allocate(alloc, nullptr, 0, size, 1), int);
-  ASSERT_EQ(allocate(alloc, nullptr, 0, size, 1, Allocator::NO_PANIC), (void*)nullptr);
+  EXPECT_EXCEPTION(reallocate(alloc, nullptr, 0, size, 1), int);
+  ASSERT_EQ(reallocate(alloc, nullptr, 0, size, 1, Allocator::NO_PANIC), (void*)nullptr);
 }
 
 // -----------------------------------------------------------------------------

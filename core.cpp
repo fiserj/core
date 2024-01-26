@@ -79,9 +79,29 @@ void panic_impl(int _line, const char* _msg, ...) {
 
 } // namespace detail
 
-void* allocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) {
+void* reallocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) {
   panic_if(!_alloc.alloc, "Allocator is missing the `alloc` function callback.");
   return _alloc.alloc(_alloc.ctx, _ptr, _old, _new, _align, _flags);
+}
+
+void* reallocate(void* _ptr, Size _old, Size _new, Size _align, u8 _flags) {
+  return reallocate(ctx_alloc(), _ptr, _old, _new, _align, _flags);
+}
+
+void* allocate(const Allocator& _alloc, Size _size, Size _align, u8 _flags) {
+  return reallocate(_alloc, nullptr, 0, _size, _align, _flags & (~Allocator::FREE_ALL));
+}
+
+void* allocate(Size _size, Size _align, u8 _flags) {
+  return allocate(ctx_alloc(), _size, _align, _flags);
+}
+
+void free(const Allocator& _alloc, void* _ptr, Size _size) {
+  (void)reallocate(_alloc, _ptr, _size, 0, DEFAULT_ALIGN);
+}
+
+void free(void* _ptr, Size _size) {
+  free(ctx_alloc(), _ptr, _size);
 }
 
 const Allocator& std_alloc() {
@@ -105,7 +125,7 @@ const Allocator& std_alloc() {
 
       void* ptr = aligned_malloc(size, align);
       if (!ptr) {
-        panic_if(!(_flags & Allocator::NO_PANIC), "Failed to allocate %td bytes aligned to a %td-byte boundary.", _new, _align);
+        panic_if(!(_flags & Allocator::NO_PANIC), "Failed to reallocate %td bytes aligned to a %td-byte boundary.", _new, _align);
         return nullptr;
       }
 
@@ -172,7 +192,7 @@ Allocator make_arena_alloc(Arena& _arena) {
 
       Size offset = align_up(arena.data + arena.head, _align) - arena.data;
       if (offset + _new > arena.cap) {
-        panic_if(!(_flags & Allocator::NO_PANIC), "Failed to allocate %td bytes aligned to a %td-byte boundary.", _new, _align);
+        panic_if(!(_flags & Allocator::NO_PANIC), "Failed to reallocate %td bytes aligned to a %td-byte boundary.", _new, _align);
         return nullptr;
       }
 
