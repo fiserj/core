@@ -31,7 +31,7 @@
 #  define aligned_malloc(_size, _align) _aligned_malloc(_size, _align)
 #  define aligned_free(_ptr) _aligned_free(_ptr)
 #else
-#  define aligned_malloc(_size, _align) aligned_alloc(_align,  _size) // Not a typo!
+#  define aligned_malloc(_size, _align) aligned_alloc(_align, _size) // Not a typo!
 #  define aligned_free(_ptr) free(_ptr)
 #endif
 
@@ -79,15 +79,15 @@ void panic_impl(int _line, const char* _msg, ...) {
 
 } // namespace detail
 
-void* allocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align) {
+void* allocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) {
   panic_if(!_alloc.alloc, "Allocator is missing the `alloc` function callback.");
-  return _alloc.alloc(_alloc.ctx, _ptr, _old, _new, _align);
+  return _alloc.alloc(_alloc.ctx, _ptr, _old, _new, _align, _flags);
 }
 
 const Allocator& std_alloc() {
   const static Allocator alloc = {
     .ctx   = nullptr,
-    .alloc = [](void*, void* _ptr, Size _old, Size _new, Size _align) -> void* {
+    .alloc = [](void*, void* _ptr, Size _old, Size _new, Size _align, [[maybe_unused]] u8 _flags) -> void* {
       assert(_old >= 0);
       assert(_new >= 0);
       assert(is_power_of_two(_align));
@@ -149,7 +149,7 @@ Arena make_arena(Slice<u8>&& _buf) {
 Allocator make_arena_alloc(Arena& _arena) {
   return {
     .ctx   = &_arena,
-    .alloc = [](void* _ctx, void* _ptr, Size _old, Size _new, Size _align) -> void* {
+    .alloc = [](void* _ctx, void* _ptr, Size _old, Size _new, Size _align, [[maybe_unused]] u8 _flags) -> void* {
       assert(_ctx);
       assert(is_power_of_two(_align));
 

@@ -205,9 +205,16 @@ constexpr T* align_up(T* _ptr, A _align) {
 // -----------------------------------------------------------------------------
 
 struct Allocator {
+  enum Flags : u8 {
+    DEFAULT  = 0x0,
+    FREE_ALL = 0x1,
+    NON_ZERO = 0x2,
+    NO_PANIC = 0x4,
+  };
+
   void* ctx;
 
-  void* (*alloc)(void* _ctx, void* _ptr, Size _old, Size _new, Size _align);
+  void* (*alloc)(void* _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags);
 };
 
 const Allocator& std_alloc();
@@ -216,7 +223,7 @@ Allocator& ctx_alloc();
 
 Allocator& ctx_temp_alloc();
 
-void* allocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align);
+void* allocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags = Allocator::DEFAULT);
 
 namespace detail {
 
@@ -306,7 +313,7 @@ Slice<T, Dynamic> make_slice(Size _len, Size _cap, Allocator& _alloc) {
   assert(_alloc.alloc);
 
   Slice<T, Dynamic> slice;
-  slice.data  = (T*)_alloc.alloc(_alloc.ctx, nullptr, 0, _cap * sizeof(T), alignof(T));
+  slice.data  = (T*)allocate(_alloc, nullptr, 0, _cap * sizeof(T), alignof(T));
   slice.len   = _len;
   slice.cap   = _cap;
   slice.alloc = &_alloc;
@@ -350,7 +357,7 @@ Slice<T> make_slice(T* _data, Size _len) {
 template <typename T>
 void destroy(Slice<T, Dynamic>& _slice) {
   assert(_slice.alloc);
-  _slice.alloc->alloc(_slice.alloc->ctx, _slice.data, size_t(_slice.cap) * sizeof(T), 0, alignof(T));
+  allocate(*_slice.alloc, _slice.data, _slice.cap * sizeof(T), 0, alignof(T));
 }
 
 template <typename T>
@@ -359,7 +366,7 @@ void reserve(Slice<T, Dynamic>& _slice, Size _cap) {
     return;
   }
 
-  _slice.data = (T*)_slice.alloc->alloc(_slice.alloc->ctx, _slice.data, size_t(_slice.cap) * sizeof(T), _cap * sizeof(T), alignof(T));
+  _slice.data = (T*)allocate(*_slice.alloc, _slice.data, _slice.cap * sizeof(T), _cap * sizeof(T), alignof(T));
   _slice.cap  = _cap;
 }
 
