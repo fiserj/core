@@ -396,6 +396,34 @@ UTEST(Slice, begin_end) {
   ASSERT_EQ(end(empty), (int*)nullptr);
 }
 
+UTEST(Slice, range_based_for) {
+  const int ones[3] = {1, 1, 1};
+  const int twos[3] = {2, 2, 2};
+
+  auto dynamic = make_slice<int>(3);
+  defer(destroy(dynamic));
+
+  for (int& value : dynamic) {
+    value = 1;
+  }
+  ASSERT_EQ(memcmp(dynamic.data, ones, sizeof(ones)), 0);
+
+  int  array[3] = {};
+  auto view     = make_slice(array);
+
+  for (int& value : view) {
+    value = 1;
+  }
+  ASSERT_EQ(memcmp(array, ones, sizeof(ones)), 0);
+
+  auto subview = view(0, _);
+
+  for (int& value : subview) {
+    value = 2;
+  }
+  ASSERT_EQ(memcmp(array, twos, sizeof(twos)), 0);
+}
+
 UTEST(Slice, bytes) {
   const int ints[3] = {};
   ASSERT_EQ(bytes(make_slice(ints)), sizeof(ints));

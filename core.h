@@ -301,6 +301,16 @@ struct Slice {
   }
 };
 
+template <typename T>
+T* begin(const Slice<T>& _slice) {
+  return _slice.data;
+}
+
+template <typename T>
+T* end(const Slice<T>& _slice) {
+  return _slice.data + _slice.len;
+}
+
 constexpr Size next_cap(Size _cap, Size _req) {
   return max(max(Size(8), _req), (_cap * 3) / 2);
 }
@@ -437,13 +447,9 @@ T& pop(Slice<T, Dynamic>& _slice) {
 }
 
 template <typename T>
-T* begin(const detail::Slice<T>& _slice) {
-  return _slice.data;
-}
-
-template <typename T>
-T* end(const detail::Slice<T>& _slice) {
-  return _slice.data + _slice.len;
+bool empty(const detail::Slice<T>& _slice) {
+  assert(_slice.len >= 0);
+  return _slice.len == 0;
 }
 
 template <typename T>
