@@ -116,6 +116,16 @@ struct RemoveConst<const T> {
   using Type = T;
 };
 
+template <typename T, typename U>
+struct TypeEquivalence {
+  static constexpr bool val = false;
+};
+
+template <typename T>
+struct TypeEquivalence<T, T> {
+  static constexpr bool val = true;
+};
+
 } // namespace detail
 
 template <typename T>
@@ -123,6 +133,9 @@ using NonConst = typename detail::RemoveConst<T>::Type;
 
 template <typename T>
 using Const = const typename detail::RemoveConst<T>::Type;
+
+template <typename T, typename U>
+constexpr bool is_same = detail::TypeEquivalence<T, U>::val;
 
 // -----------------------------------------------------------------------------
 // NON COPYABLE BASE
@@ -345,9 +358,11 @@ Slice<T, Dynamic> make_slice(Size _len, Size _cap, Allocator& _alloc) {
   return slice;
 }
 
-template <typename T>
-Slice<T, Dynamic> make_slice(Size _len, Size _cap) {
-  return make_slice<T>(_len, _cap, ctx_alloc());
+template <typename T, typename S>
+Slice<T, Dynamic> make_slice(S _len, Size _cap) {
+  static_assert(is_same<S, Size> || is_same<S, decltype(0)>);
+
+  return make_slice<T>(Size(_len), _cap, ctx_alloc());
 }
 
 template <typename T>

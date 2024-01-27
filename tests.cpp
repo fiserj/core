@@ -347,7 +347,7 @@ UTEST(Slice, copy) {
 UTEST(Slice, append_value) {
   const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-  auto slice = make_slice<int>(Size(0), 1);
+  auto slice = make_slice<int>(0, 1);
   defer(destroy(slice));
 
   for (int i = 0; i < 10; i++) {
