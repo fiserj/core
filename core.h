@@ -379,6 +379,9 @@ Slice<T> make_slice(T* _data, Size _len) {
 }
 
 template <typename T>
+Slice<T> make_slice(decltype(nullptr), Size) = delete;
+
+template <typename T>
 void destroy(Slice<T, Dynamic>& _slice) {
   assert(_slice.alloc);
   free(*_slice.alloc, _slice.data, _slice.cap * sizeof(T));
