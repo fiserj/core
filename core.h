@@ -253,7 +253,7 @@ struct ScopedAllocator : NonCopyable {
 } // namespace detail
 
 #define scope_alloc(_alloc) \
-  ::detail::ScopedAllocator CONCAT(scoped_alloc, __LINE__)(_alloc)
+  ::detail::ScopedAllocator CONCAT(scoped_alloc_, __LINE__)(_alloc)
 
 // -----------------------------------------------------------------------------
 // SLICE
