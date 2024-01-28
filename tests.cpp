@@ -135,7 +135,7 @@ UTEST(arena_alloc, zeroed_memory) {
   memset(buf, 0xff, sizeof(buf));
 
   Arena     arena = make_arena(make_slice(buf));
-  Allocator alloc = make_arena_alloc(arena);
+  Allocator alloc = make_alloc(arena);
 
   constexpr Size size = 13;
 
@@ -157,7 +157,7 @@ UTEST(arena_alloc, alignment) {
 
   for (auto align : aligns) {
     Arena     arena = make_arena(make_slice(buf));
-    Allocator alloc = make_arena_alloc(arena);
+    Allocator alloc = make_alloc(arena);
 
     void* mem = reallocate(alloc, nullptr, 0, size, align);
 
@@ -169,7 +169,7 @@ UTEST(arena_alloc, out_of_memory) {
   u8 buf[128];
 
   Arena     arena = make_arena(make_slice(buf));
-  Allocator alloc = make_arena_alloc(arena);
+  Allocator alloc = make_alloc(arena);
 
   constexpr Size size = sizeof(buf) + 1;
 

@@ -35,6 +35,10 @@
 #  define aligned_free(_ptr)            free(_ptr)
 #endif
 
+// -----------------------------------------------------------------------------
+// INTERNAL HELPERS
+// -----------------------------------------------------------------------------
+
 namespace {
 
 constexpr size_t DEFAULT_ALIGN = 2 * sizeof(void*);
@@ -58,6 +62,10 @@ void copy(void* _dst, Size _dst_size, const void* _src, Size _src_size, bool _ze
 
 } // anonymous namespace
 
+// -----------------------------------------------------------------------------
+// PANIC
+// -----------------------------------------------------------------------------
+
 namespace detail {
 
 void panic_impl(int _line, const char* _msg, ...) {
@@ -78,6 +86,10 @@ void panic_impl(int _line, const char* _msg, ...) {
 }
 
 } // namespace detail
+
+// -----------------------------------------------------------------------------
+// ALLOCATION HELPERS
+// -----------------------------------------------------------------------------
 
 void* reallocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) {
   panic_if(!_alloc.alloc, "Allocator is missing the `alloc` function callback.");
@@ -111,6 +123,10 @@ void free_all(const Allocator& _alloc) {
 void free_all() {
   free_all(ctx_alloc());
 }
+
+// -----------------------------------------------------------------------------
+// ALLOCATORS
+// -----------------------------------------------------------------------------
 
 const Allocator& std_alloc() {
   const static Allocator alloc = {
@@ -162,7 +178,7 @@ struct DefaultTempAlloc {
 
   DefaultTempAlloc() {
     arena = make_arena(make_slice(buf));
-    alloc = make_arena_alloc(arena);
+    alloc = make_alloc(arena);
   }
 };
 
@@ -172,6 +188,10 @@ Allocator& ctx_temp_alloc() {
   return ctx_alloc();
 }
 
+// -----------------------------------------------------------------------------
+// SIMPLE ARENA
+// -----------------------------------------------------------------------------
+
 Arena make_arena(Slice<u8>&& _buf) {
   return {
     .data = _buf.data,
@@ -180,7 +200,7 @@ Arena make_arena(Slice<u8>&& _buf) {
   };
 }
 
-Allocator make_arena_alloc(Arena& _arena) {
+Allocator make_alloc(Arena& _arena) {
   return {
     .ctx   = &_arena,
     .alloc = [](void* _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
@@ -212,3 +232,9 @@ Allocator make_arena_alloc(Arena& _arena) {
       return ptr;
     }};
 }
+
+// -----------------------------------------------------------------------------
+// SLAB ARENA
+// -----------------------------------------------------------------------------
+
+// ...

@@ -236,22 +236,6 @@ Allocator& ctx_alloc();
 
 Allocator& ctx_temp_alloc();
 
-void* reallocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags = Allocator::DEFAULT);
-
-void* reallocate(void* _ptr, Size _old, Size _new, Size _align, u8 _flags = Allocator::DEFAULT);
-
-void* allocate(const Allocator& _alloc, Size _size, Size _align, u8 _flags = Allocator::DEFAULT);
-
-void* allocate(Size _size, Size _align, u8 _flags = Allocator::DEFAULT);
-
-void free(const Allocator& _alloc, void* _ptr, Size _size);
-
-void free(void* _ptr, Size _size);
-
-void free_all(const Allocator& _alloc);
-
-void free_all();
-
 namespace detail {
 
 struct ScopedAllocator : NonCopyable {
@@ -267,6 +251,26 @@ struct ScopedAllocator : NonCopyable {
 
 #define scope_alloc(_alloc) \
   ::detail::ScopedAllocator CONCAT(scoped_alloc_, __LINE__)(_alloc)
+
+// -----------------------------------------------------------------------------
+// ALLOCATION HELPERS
+// -----------------------------------------------------------------------------
+
+void* reallocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags = Allocator::DEFAULT);
+
+void* reallocate(void* _ptr, Size _old, Size _new, Size _align, u8 _flags = Allocator::DEFAULT);
+
+void* allocate(const Allocator& _alloc, Size _size, Size _align, u8 _flags = Allocator::DEFAULT);
+
+void* allocate(Size _size, Size _align, u8 _flags = Allocator::DEFAULT);
+
+void free(const Allocator& _alloc, void* _ptr, Size _size);
+
+void free(void* _ptr, Size _size);
+
+void free_all(const Allocator& _alloc);
+
+void free_all();
 
 // -----------------------------------------------------------------------------
 // SLICE
@@ -340,9 +344,6 @@ struct Slice<T, Dynamic> : detail::Slice<T> {
   Size       cap;
   Allocator* alloc;
 };
-
-template <typename T>
-using DSlice = Slice<T, Dynamic>;
 
 template <typename T>
 Slice<T, Dynamic> make_slice(Size _len, Size _cap, Allocator& _alloc) {
@@ -476,7 +477,7 @@ size_t bytes(const detail::Slice<T>& _slice) {
 }
 
 // -----------------------------------------------------------------------------
-// ARENA
+// SIMPLE ARENA (NON-OWNING)
 // -----------------------------------------------------------------------------
 
 struct Arena {
@@ -487,7 +488,25 @@ struct Arena {
 
 Arena make_arena(Slice<u8>&& _buf);
 
-Allocator make_arena_alloc(Arena& _arena);
+Allocator make_alloc(Arena& _arena);
+
+// -----------------------------------------------------------------------------
+// SLAB ARENA (GROWABLE)
+// -----------------------------------------------------------------------------
+
+struct SlabArena {
+  Slice<u8, Dynamic> slabs;
+  Size               active;
+  Size               head;
+};
+
+SlabArena make_slab_arena(Allocator& _alloc);
+
+SlabArena make_slab_arena();
+
+Allocator make_alloc(SlabArena& _arena);
+
+void destroy(SlabArena& _arena);
 
 // -----------------------------------------------------------------------------
 // RING BUFFER
