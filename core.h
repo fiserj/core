@@ -350,11 +350,12 @@ Slice<T, Dynamic> make_slice(Size _len, Size _cap, Allocator& _alloc) {
   assert(_len >= 0 && _len <= _cap);
   assert(_alloc.alloc);
 
+  // TODO : Can we make this work with designated initializers?
   return {
-    {.data = (T*)allocate(_alloc, _cap * sizeof(T), alignof(T)),
-     .len  = _len},
-    .cap   = _cap,
-    .alloc = _alloc,
+    {(T*)allocate(_alloc, _cap * sizeof(T), alignof(T)),
+     _len},
+    _cap,
+    _alloc,
   };
 }
 
