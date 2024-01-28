@@ -494,9 +494,8 @@ Allocator make_alloc(Arena& _arena);
 // -----------------------------------------------------------------------------
 
 struct SlabArena {
-  Slice<u8*, Dynamic> slabs;
-  Size                active;
-  Size                head;
+  Slice<Slice<u8>, Dynamic> slabs;
+  Size                      head;
 };
 
 SlabArena make_slab_arena(Allocator& _alloc);

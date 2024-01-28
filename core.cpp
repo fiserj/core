@@ -119,7 +119,7 @@ void free(void* _ptr, Size _size) {
 }
 
 void free_all(const Allocator& _alloc) {
-  (void)reallocate(_alloc, nullptr, 0, 0, Allocator::FREE_ALL);
+  (void)reallocate(_alloc, nullptr, 0, 0, DEFAULT_ALIGN, Allocator::FREE_ALL);
 }
 
 void free_all() {
@@ -246,11 +246,15 @@ Allocator make_alloc(Arena& _arena) {
 // -----------------------------------------------------------------------------
 
 SlabArena make_slab_arena(Allocator& _alloc) {
-  return {
-    .slabs  = make_slice<u8*>(DEFAULT_SLAB_SIZE, _alloc),
-    .active = 0,
-    .head   = 0,
+  SlabArena arena = {
+    .slabs = make_slice<Slice<u8>>(0, 8, _alloc),
+    .head  = 0,
   };
+
+  u8* data = (u8*)allocate(_alloc, DEFAULT_SLAB_SIZE, DEFAULT_ALIGN);
+  append(arena.slabs, make_slice(data, DEFAULT_SLAB_SIZE));
+
+  return arena;
 }
 
 SlabArena make_slab_arena() {
@@ -268,11 +272,11 @@ Allocator make_alloc(SlabArena& _arena) {
 
       if (_flags & Allocator::FREE_ALL) {
         for (Size i = 1; i < arena.slabs.len; i++) {
-          free(arena.slabs.alloc, arena.slabs[i], DEFAULT_SLAB_SIZE);
+          free(arena.slabs.alloc, arena.slabs[i].data, DEFAULT_SLAB_SIZE);
         }
 
-        arena.active = 0;
-        arena.head   = 0;
+        resize(arena.slabs, 1);
+        arena.head = 0;
 
         return nullptr;
       }
@@ -282,19 +286,20 @@ Allocator make_alloc(SlabArena& _arena) {
       }
 
       Arena slab = {
-        .data = arena.slabs[arena.active],
+        .data = arena.slabs[arena.slabs.len - 1].data,
         .head = arena.head,
         .cap  = DEFAULT_SLAB_SIZE,
       };
 
       if (void* ptr = arena_alloc(slab, _ptr, _old, _new, _align, _flags | Allocator::NO_PANIC)) {
+        arena.head = slab.head;
+
         return ptr;
       }
 
       const Size size = max(_new, DEFAULT_SLAB_SIZE);
       if (void* ptr = reallocate(arena.slabs.alloc, _ptr, _old, size, _align, _flags)) {
-        append(arena.slabs, (u8*)ptr);
-        arena.active++;
+        append(arena.slabs, make_slice((u8*)ptr, size));
         arena.head = size;
 
         return ptr;
@@ -306,8 +311,8 @@ Allocator make_alloc(SlabArena& _arena) {
 }
 
 void destroy(SlabArena& _arena) {
-  for (u8* slab : _arena.slabs) {
-    free(_arena.slabs.alloc, slab, DEFAULT_SLAB_SIZE);
+  for (auto slab : _arena.slabs) {
+    free(_arena.slabs.alloc, slab.data, slab.len);
   }
 
   destroy(_arena.slabs);

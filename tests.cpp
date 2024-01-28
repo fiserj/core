@@ -177,6 +177,45 @@ UTEST(arena_alloc, out_of_memory) {
   ASSERT_EQ(reallocate(alloc, nullptr, 0, size, 1, Allocator::NO_PANIC), (void*)nullptr);
 }
 
+UTEST(arena_alloc, free_all) {
+  u8 buf[128];
+
+  Arena     arena = make_arena(make_slice(buf));
+  Allocator alloc = make_alloc(arena);
+
+  allocate(alloc, 10, 1);
+  allocate(alloc, 20, 1);
+  allocate(alloc, 30, 1);
+  ASSERT_EQ(arena.head, 60);
+
+  free_all(alloc);
+  ASSERT_EQ(arena.head, 0);
+}
+
+UTEST(SlabArena, make_slab_arena) {
+  auto arena = make_slab_arena();
+  defer(destroy(arena));
+
+  ASSERT_EQ(arena.slabs.len, 1);
+  ASSERT_EQ(&arena.slabs.alloc, &ctx_alloc());
+  ASSERT_EQ(arena.head, 0);
+}
+
+UTEST(slab_arena_alloc, grow) {
+  auto arena = make_slab_arena();
+  defer(destroy(arena));
+
+  Allocator alloc = make_alloc(arena);
+
+  ASSERT_EQ(arena.slabs.len, 1);
+
+  allocate(alloc, 6 * 1024 * 1024, 1);
+  ASSERT_EQ(arena.slabs.len, 1);
+
+  allocate(alloc, 6 * 1024 * 1024, 1);
+  ASSERT_EQ(arena.slabs.len, 2);
+}
+
 // -----------------------------------------------------------------------------
 // SLICE
 // -----------------------------------------------------------------------------
