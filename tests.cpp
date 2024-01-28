@@ -184,12 +184,12 @@ UTEST(arena_alloc, out_of_memory) {
 UTEST(Slice, truthiness) {
   int array[3] = {1, 2, 3};
 
-  const detail::Slice<int> valid = {
+  const ISlice<int> valid = {
     .data = array,
     .len  = sizeof(array) / sizeof(array[0]),
   };
 
-  const detail::Slice<int> empty = {};
+  const ISlice<int> empty = {};
 
   ASSERT_TRUE(valid);
   ASSERT_FALSE(empty);
@@ -198,7 +198,7 @@ UTEST(Slice, truthiness) {
 UTEST(Slice, element_access) {
   int array[3] = {1, 2, 3};
 
-  const detail::Slice<int> slice = {
+  const ISlice<int> slice = {
     .data = array,
     .len  = sizeof(array) / sizeof(array[0]),
   };
@@ -217,7 +217,7 @@ UTEST(Slice, subslicing) {
   //
   // On some GCC versions, `#pragma GCC diagnostic ignored "-Warray-bounds"`
   // is still ignored, so instead, we point the slice's start to `ZERO_MEM + 1`.
-  const detail::Slice<const u8> slice = {
+  const ISlice<const u8> slice = {
     .data = ZERO_MEM + 1,
     .len  = 3,
   };

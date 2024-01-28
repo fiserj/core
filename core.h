@@ -276,10 +276,8 @@ void free_all();
 // SLICE
 // -----------------------------------------------------------------------------
 
-namespace detail {
-
 template <typename T>
-struct Slice {
+struct ISlice {
   T*   data;
   Size len;
 
@@ -287,7 +285,7 @@ struct Slice {
     return data != nullptr;
   }
 
-  operator Slice<Const<T>>() const {
+  operator ISlice<Const<T>>() const {
     return {
       .data = data,
       .len  = len,
@@ -299,7 +297,7 @@ struct Slice {
     return data[_i];
   }
 
-  Slice<T> operator()(Index _low, Index _high) const {
+  ISlice<T> operator()(Index _low, Index _high) const {
     check_bounds(_low >= 0);
     check_bounds(_low <= _high);
     check_bounds(_high <= len);
@@ -309,24 +307,16 @@ struct Slice {
     };
   }
 
-  Slice<T> operator()(OmittedTag, Index _high) const {
+  ISlice<T> operator()(OmittedTag, Index _high) const {
     return operator()(0, _high);
   }
 
-  Slice<T> operator()(Index _low, OmittedTag) const {
+  ISlice<T> operator()(Index _low, OmittedTag) const {
     return operator()(_low, len);
   }
 };
 
-template <typename T>
-T* begin(const Slice<T>& _slice) {
-  return _slice.data;
-}
-
-template <typename T>
-T* end(const Slice<T>& _slice) {
-  return _slice.data + _slice.len;
-}
+namespace detail {
 
 constexpr Size next_cap(Size _cap, Size _req) {
   return max(max(Size(8), _req), (_cap * 3) / 2);
@@ -337,10 +327,10 @@ constexpr Size next_cap(Size _cap, Size _req) {
 constexpr bool Dynamic = true;
 
 template <typename T, bool IsDynamic = false>
-struct Slice : detail::Slice<T> {};
+struct Slice : ISlice<T> {};
 
 template <typename T>
-struct Slice<T, Dynamic> : detail::Slice<T> {
+struct Slice<T, Dynamic> : ISlice<T> {
   Size       cap;
   Allocator& alloc;
 };
@@ -432,7 +422,7 @@ void resize(Slice<T, Dynamic>& _slice, Size _len) {
 }
 
 template <typename T>
-void copy(const detail::Slice<T>& _dst, const detail::Slice<Const<T>>& _src) {
+void copy(const ISlice<T>& _dst, const ISlice<Const<T>>& _src) {
   memcpy(_dst.data, _src.data, size_t(min(_dst.len, _src.len)) * sizeof(T));
 }
 
@@ -446,7 +436,7 @@ void append(Slice<T, Dynamic>& _slice, const T& _value) {
 }
 
 template <typename T>
-void append(Slice<T, Dynamic>& _slice, const detail::Slice<Const<T>>& _values) {
+void append(Slice<T, Dynamic>& _slice, const ISlice<Const<T>>& _values) {
   const Size low = _slice.len;
   const Size len = _slice.len + _values.len;
 
@@ -465,13 +455,23 @@ T& pop(Slice<T, Dynamic>& _slice) {
 }
 
 template <typename T>
-bool empty(const detail::Slice<T>& _slice) {
+bool empty(const ISlice<T>& _slice) {
   assert(_slice.len >= 0);
   return _slice.len == 0;
 }
 
 template <typename T>
-size_t bytes(const detail::Slice<T>& _slice) {
+T* begin(const ISlice<T>& _slice) {
+  return _slice.data;
+}
+
+template <typename T>
+T* end(const ISlice<T>& _slice) {
+  return _slice.data + _slice.len;
+}
+
+template <typename T>
+size_t bytes(const ISlice<T>& _slice) {
   return size_t(_slice.len) * sizeof(T);
 }
 
@@ -519,7 +519,7 @@ struct Ring {
 };
 
 template <typename T>
-Ring<T> make_ring(detail::Slice<T>&& _buf) {
+Ring<T> make_ring(ISlice<T>&& _buf) {
   Ring<T> ring;
   ring.buf  = {{_buf.data, _buf.len}};
   ring.head = 0;
