@@ -47,6 +47,8 @@ constexpr Size operator""_MiB(unsigned long long _x) {
   return 1024 * 1024 * Size(_x);
 }
 
+constexpr Size DEFAULT_SLAB_SIZE = 8_MiB;
+
 void copy(void* _dst, Size _dst_size, const void* _src, Size _src_size, bool _zero_mem) {
   assert(_src_size >= 0);
   assert(_src_size == 0 || _src);
@@ -60,7 +62,7 @@ void copy(void* _dst, Size _dst_size, const void* _src, Size _src_size, bool _ze
   }
 }
 
-} // anonymous namespace
+} // unnamed namespace
 
 // -----------------------------------------------------------------------------
 // PANIC
@@ -200,36 +202,42 @@ Arena make_arena(Slice<u8>&& _buf) {
   };
 }
 
+namespace {
+
+void* arena_alloc(Arena& _arena, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) {
+  assert(is_power_of_two(_align));
+
+  if (_flags & Allocator::FREE_ALL) {
+    _arena.head = 0;
+    return nullptr;
+  }
+
+  if (_new <= 0) {
+    return nullptr;
+  }
+
+  Size offset = align_up(_arena.data + _arena.head, _align) - _arena.data;
+  if (offset + _new > _arena.cap) {
+    panic_if(!(_flags & Allocator::NO_PANIC), "Failed to reallocate %td bytes aligned to a %td-byte boundary.", _new, _align);
+    return nullptr;
+  }
+
+  u8* ptr     = _arena.data + offset;
+  _arena.head = offset + _new;
+
+  copy(ptr, _new, _ptr, _old, !(_flags & Allocator::NON_ZERO));
+
+  return ptr;
+}
+
+} // unnamed namespace
+
 Allocator make_alloc(Arena& _arena) {
   return {
     .ctx   = &_arena,
     .alloc = [](void* _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
       assert(_ctx);
-      assert(is_power_of_two(_align));
-
-      Arena& arena = *(Arena*)_ctx;
-
-      if (_flags & Allocator::FREE_ALL) {
-        arena.head = 0;
-        return nullptr;
-      }
-
-      if (_new <= 0) {
-        return nullptr;
-      }
-
-      Size offset = align_up(arena.data + arena.head, _align) - arena.data;
-      if (offset + _new > arena.cap) {
-        panic_if(!(_flags & Allocator::NO_PANIC), "Failed to reallocate %td bytes aligned to a %td-byte boundary.", _new, _align);
-        return nullptr;
-      }
-
-      u8* ptr    = arena.data + offset;
-      arena.head = offset + _new;
-
-      copy(ptr, _new, _ptr, _old, !(_flags & Allocator::NON_ZERO));
-
-      return ptr;
+      return arena_alloc(*(Arena*)_ctx, _ptr, _old, _new, _align, _flags);
     }};
 }
 
@@ -237,4 +245,70 @@ Allocator make_alloc(Arena& _arena) {
 // SLAB ARENA
 // -----------------------------------------------------------------------------
 
-// ...
+SlabArena make_slab_arena(Allocator& _alloc) {
+  return {
+    .slabs  = make_slice<u8*>(DEFAULT_SLAB_SIZE, _alloc),
+    .active = 0,
+    .head   = 0,
+  };
+}
+
+SlabArena make_slab_arena() {
+  return make_slab_arena(ctx_alloc());
+}
+
+Allocator make_alloc(SlabArena& _arena) {
+  return {
+    .ctx   = &_arena,
+    .alloc = [](void* _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
+      assert(_ctx);
+      assert(is_power_of_two(_align));
+
+      SlabArena& arena = *(SlabArena*)_ctx;
+
+      if (_flags & Allocator::FREE_ALL) {
+        for (Size i = 1; i < arena.slabs.len; i++) {
+          free(*arena.slabs.alloc, arena.slabs[i], DEFAULT_SLAB_SIZE);
+        }
+
+        arena.active = 0;
+        arena.head   = 0;
+
+        return nullptr;
+      }
+
+      if (_new <= 0) {
+        return nullptr;
+      }
+
+      Arena slab = {
+        .data = arena.slabs[arena.active],
+        .head = arena.head,
+        .cap  = DEFAULT_SLAB_SIZE,
+      };
+
+      if (void* ptr = arena_alloc(slab, _ptr, _old, _new, _align, _flags | Allocator::NO_PANIC)) {
+        return ptr;
+      }
+
+      const Size size = max(_new, DEFAULT_SLAB_SIZE);
+      if (void* ptr = reallocate(*arena.slabs.alloc, _ptr, _old, size, _align, _flags)) {
+        append(arena.slabs, (u8*)ptr);
+        arena.active++;
+        arena.head = size;
+
+        return ptr;
+      }
+
+      return nullptr;
+    },
+  };
+}
+
+void destroy(SlabArena& _arena) {
+  for (u8* slab : _arena.slabs) {
+    free(*_arena.slabs.alloc, slab, DEFAULT_SLAB_SIZE);
+  }
+
+  destroy(_arena.slabs);
+}
