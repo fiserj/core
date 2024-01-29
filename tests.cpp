@@ -177,6 +177,27 @@ UTEST(arena_alloc, out_of_memory) {
   ASSERT_EQ(reallocate(alloc, nullptr, 0, size, 1, Allocator::NO_PANIC), (void*)nullptr);
 }
 
+UTEST(arena_alloc, free) {
+  u8 buf[128];
+
+  Arena     arena = make_arena(make_slice(buf));
+  Allocator alloc = make_alloc(arena);
+
+  ASSERT_EQ(arena.head, 0);
+
+  void* first = allocate(alloc, 10, 1);
+  ASSERT_EQ(arena.head, 10);
+
+  free(alloc, first, 10);
+  ASSERT_EQ(arena.head, 10);
+
+  void* second = allocate(alloc, 20, 1);
+  ASSERT_EQ(arena.head, 30);
+
+  free(alloc, second, 20);
+  ASSERT_EQ(arena.head, 30);
+}
+
 UTEST(arena_alloc, free_all) {
   u8 buf[128];
 
