@@ -126,6 +126,11 @@ struct TypeEquivalence<T, T> {
   static constexpr bool val = true;
 };
 
+template <typename T>
+struct TypeId {
+  static constexpr int val = 0;
+};
+
 } // namespace detail
 
 template <typename T>
@@ -136,6 +141,9 @@ using Const = const typename detail::RemoveConst<T>::Type;
 
 template <typename T, typename U>
 constexpr bool is_same = detail::TypeEquivalence<T, U>::val;
+
+template <typename T>
+uintptr_t type_id = uintptr_t(&detail::TypeId<T>::val);
 
 // -----------------------------------------------------------------------------
 // NON COPYABLE BASE
