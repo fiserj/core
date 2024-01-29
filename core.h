@@ -480,12 +480,11 @@ size_t bytes(const ISlice<T>& _slice) {
 // -----------------------------------------------------------------------------
 
 struct Arena {
-  u8*  data;
-  Size head;
-  Size cap;
+  Slice<u8> buf;
+  Size      head;
 };
 
-Arena make_arena(Slice<u8>&& _buf);
+Arena make_arena(ISlice<u8>&& _buf);
 
 Allocator make_alloc(Arena& _arena);
 

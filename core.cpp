@@ -194,11 +194,10 @@ Allocator& ctx_temp_alloc() {
 // SIMPLE ARENA
 // -----------------------------------------------------------------------------
 
-Arena make_arena(Slice<u8>&& _buf) {
+Arena make_arena(ISlice<u8>&& _buf) {
   return {
-    .data = _buf.data,
+    .buf  = {{_buf.data, _buf.len}},
     .head = 0,
-    .cap  = _buf.len,
   };
 }
 
@@ -216,13 +215,13 @@ void* arena_alloc(Arena& _arena, void* _ptr, Size _old, Size _new, Size _align, 
     return nullptr;
   }
 
-  Size offset = align_up(_arena.data + _arena.head, _align) - _arena.data;
-  if (offset + _new > _arena.cap) {
+  Size offset = align_up(_arena.buf.data + _arena.head, _align) - _arena.buf.data;
+  if (offset + _new > _arena.buf.len) {
     panic_if(!(_flags & Allocator::NO_PANIC), "Failed to reallocate %td bytes aligned to a %td-byte boundary.", _new, _align);
     return nullptr;
   }
 
-  u8* ptr     = _arena.data + offset;
+  u8* ptr     = _arena.buf.data + offset;
   _arena.head = offset + _new;
 
   copy(ptr, _new, _ptr, _old, !(_flags & Allocator::NON_ZERO));
@@ -286,9 +285,8 @@ Allocator make_alloc(SlabArena& _arena) {
       }
 
       Arena slab = {
-        .data = arena.slabs[arena.slabs.len - 1].data,
+        .buf  = arena.slabs[arena.slabs.len - 1],
         .head = arena.head,
-        .cap  = DEFAULT_SLAB_SIZE,
       };
 
       if (void* ptr = arena_alloc(slab, _ptr, _old, _new, _align, _flags | Allocator::NO_PANIC)) {
