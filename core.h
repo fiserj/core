@@ -254,7 +254,7 @@ struct AnyPtr {
 
   template <typename T>
   T* as() const {
-    if (type != TypeId<T>) {
+    if (type != TypeId<T> && type != TypeId<NonConst<T>>) {
       panic("Failed to safely type-cast AnyPtr.");
       return nullptr;
     }

@@ -49,12 +49,19 @@ UTEST(AnyPtr, nullptr_construction) {
 UTEST(AnyPtr, pointer_construction) {
   int    i     = 1;
   AnyPtr i_ptr = &i;
+  ASSERT_EQ((void*)&i, i_ptr.ptr);
 
   double d     = 1.0;
   AnyPtr d_ptr = &d;
+  ASSERT_EQ((void*)&d, d_ptr.ptr);
+}
+
+UTEST(AnyPtr, as) {
+  int    i     = 1;
+  AnyPtr i_ptr = &i;
 
   ASSERT_EQ(i_ptr.as<int>(), &i);
-  ASSERT_EQ(d_ptr.as<double>(), &d);
+  ASSERT_EQ(i_ptr.as<const int>(), &i);
 }
 
 UTEST(AnyPtr, bad_cast) {
@@ -70,7 +77,6 @@ UTEST(AnyPtr, bad_cast) {
   const int ci     = 1;
   AnyPtr    ci_ptr = &ci;
 
-  EXPECT_EXCEPTION(i_ptr.as<const int>(), int); // TODO : Relax this.
   EXPECT_EXCEPTION(ci_ptr.as<int>(), int);
 }
 
