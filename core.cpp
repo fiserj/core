@@ -93,7 +93,7 @@ void panic_impl(int _line, const char* _msg, ...) {
 // ALLOCATION HELPERS
 // -----------------------------------------------------------------------------
 
-void* reallocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) {
+void* reallocate(Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) {
   panic_if(!_alloc.alloc, "Allocator is missing the `alloc` function callback.");
   return _alloc.alloc(_alloc.ctx, _ptr, _old, _new, _align, _flags);
 }
@@ -102,7 +102,7 @@ void* reallocate(void* _ptr, Size _old, Size _new, Size _align, u8 _flags) {
   return reallocate(ctx_alloc(), _ptr, _old, _new, _align, _flags);
 }
 
-void* allocate(const Allocator& _alloc, Size _size, Size _align, u8 _flags) {
+void* allocate(Allocator& _alloc, Size _size, Size _align, u8 _flags) {
   return reallocate(_alloc, nullptr, 0, _size, _align, _flags & (~Allocator::FREE_ALL));
 }
 
@@ -110,7 +110,7 @@ void* allocate(Size _size, Size _align, u8 _flags) {
   return allocate(ctx_alloc(), _size, _align, _flags);
 }
 
-void free(const Allocator& _alloc, void* _ptr, Size _size) {
+void free(Allocator& _alloc, void* _ptr, Size _size) {
   (void)reallocate(_alloc, _ptr, _size, 0, DEFAULT_ALIGN);
 }
 
@@ -118,7 +118,7 @@ void free(void* _ptr, Size _size) {
   free(ctx_alloc(), _ptr, _size);
 }
 
-void free_all(const Allocator& _alloc) {
+void free_all(Allocator& _alloc) {
   (void)reallocate(_alloc, nullptr, 0, 0, DEFAULT_ALIGN, Allocator::FREE_ALL);
 }
 
@@ -130,10 +130,10 @@ void free_all() {
 // ALLOCATORS
 // -----------------------------------------------------------------------------
 
-const Allocator& std_alloc() {
+Allocator std_alloc() {
   const static Allocator alloc = {
     .ctx   = nullptr,
-    .alloc = [](void*, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
+    .alloc = [](AnyPtr&, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
       assert(_old >= 0);
       assert(_new >= 0);
       assert(is_power_of_two(_align));
@@ -234,9 +234,9 @@ void* arena_alloc(Arena& _arena, void* _ptr, Size _old, Size _new, Size _align, 
 Allocator make_alloc(Arena& _arena) {
   return {
     .ctx   = &_arena,
-    .alloc = [](void* _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
+    .alloc = [](AnyPtr& _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
       assert(_ctx);
-      return arena_alloc(*(Arena*)_ctx, _ptr, _old, _new, _align, _flags);
+      return arena_alloc(*_ctx.as<Arena>(), _ptr, _old, _new, _align, _flags);
     }};
 }
 
@@ -263,11 +263,11 @@ SlabArena make_slab_arena() {
 Allocator make_alloc(SlabArena& _arena) {
   return {
     .ctx   = &_arena,
-    .alloc = [](void* _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
+    .alloc = [](AnyPtr& _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
       assert(_ctx);
       assert(is_power_of_two(_align));
 
-      SlabArena& arena = *(SlabArena*)_ctx;
+      SlabArena& arena = *_ctx.as<SlabArena>();
 
       if (_flags & Allocator::FREE_ALL) {
         for (Size i = 1; i < arena.slabs.len; i++) {

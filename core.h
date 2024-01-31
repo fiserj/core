@@ -131,6 +131,16 @@ struct TypeId {
   static constexpr int val = 0;
 };
 
+template <typename T>
+constexpr uintptr_t type_id() {
+  return uintptr_t(&detail::TypeId<T>::val);
+}
+
+template <>
+constexpr uintptr_t type_id<decltype(nullptr)>() {
+  return uintptr_t(0);
+}
+
 } // namespace detail
 
 template <typename T>
@@ -143,7 +153,7 @@ template <typename T, typename U>
 constexpr bool is_same = detail::TypeEquivalence<T, U>::val;
 
 template <typename T>
-uintptr_t type_id = uintptr_t(&detail::TypeId<T>::val);
+uintptr_t TypeId = detail::type_id<T>();
 
 // -----------------------------------------------------------------------------
 // NON COPYABLE BASE
@@ -222,6 +232,38 @@ constexpr T* align_up(T* _ptr, A _align) {
 }
 
 // -----------------------------------------------------------------------------
+// ANY PTR
+// -----------------------------------------------------------------------------
+
+struct AnyPtr {
+  const void* ptr  = nullptr;
+  uintptr_t   type = 0;
+
+  AnyPtr() = default;
+
+  AnyPtr(decltype(nullptr))
+    : ptr(nullptr), type(0) {}
+
+  template <typename T>
+  AnyPtr(T* _ptr)
+    : ptr(_ptr), type(TypeId<T>) {}
+
+  operator bool() const {
+    return ptr != nullptr;
+  }
+
+  template <typename T>
+  T* as() const {
+    if (type != TypeId<T>) {
+      panic("Failed to safely type-cast AnyPtr.");
+      return nullptr;
+    }
+
+    return static_cast<T*>(const_cast<void*>(ptr));
+  }
+};
+
+// -----------------------------------------------------------------------------
 // ALLOCATORS
 // -----------------------------------------------------------------------------
 
@@ -233,12 +275,12 @@ struct Allocator {
     NO_PANIC = 0x4,
   };
 
-  void* ctx;
+  AnyPtr ctx;
 
-  void* (*alloc)(void* _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags);
+  void* (*alloc)(AnyPtr& _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags);
 };
 
-const Allocator& std_alloc();
+Allocator std_alloc();
 
 Allocator& ctx_alloc();
 
@@ -264,19 +306,19 @@ struct ScopedAllocator : NonCopyable {
 // ALLOCATION HELPERS
 // -----------------------------------------------------------------------------
 
-void* reallocate(const Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags = Allocator::DEFAULT);
+void* reallocate(Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags = Allocator::DEFAULT);
 
 void* reallocate(void* _ptr, Size _old, Size _new, Size _align, u8 _flags = Allocator::DEFAULT);
 
-void* allocate(const Allocator& _alloc, Size _size, Size _align, u8 _flags = Allocator::DEFAULT);
+void* allocate(Allocator& _alloc, Size _size, Size _align, u8 _flags = Allocator::DEFAULT);
 
 void* allocate(Size _size, Size _align, u8 _flags = Allocator::DEFAULT);
 
-void free(const Allocator& _alloc, void* _ptr, Size _size);
+void free(Allocator& _alloc, void* _ptr, Size _size);
 
 void free(void* _ptr, Size _size);
 
-void free_all(const Allocator& _alloc);
+void free_all(Allocator& _alloc);
 
 void free_all();
 

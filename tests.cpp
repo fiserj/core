@@ -29,6 +29,52 @@ UTEST(defer, order) {
 }
 
 // -----------------------------------------------------------------------------
+// ANY PTR
+// -----------------------------------------------------------------------------
+
+UTEST(AnyPtr, default_construction) {
+  AnyPtr ptr;
+
+  ASSERT_EQ(ptr.ptr, (const void*)nullptr);
+  ASSERT_EQ(ptr.type, 0u);
+}
+
+UTEST(AnyPtr, nullptr_construction) {
+  AnyPtr ptr = nullptr;
+
+  ASSERT_EQ(ptr.ptr, (const void*)nullptr);
+  ASSERT_EQ(ptr.type, TypeId<decltype(nullptr)>);
+}
+
+UTEST(AnyPtr, pointer_construction) {
+  int    i     = 1;
+  AnyPtr i_ptr = &i;
+
+  double d     = 1.0;
+  AnyPtr d_ptr = &d;
+
+  ASSERT_EQ(i_ptr.as<int>(), &i);
+  ASSERT_EQ(d_ptr.as<double>(), &d);
+}
+
+UTEST(AnyPtr, bad_cast) {
+  int    i     = 1;
+  AnyPtr i_ptr = &i;
+
+  double d     = 1.0;
+  AnyPtr d_ptr = &d;
+
+  EXPECT_EXCEPTION(i_ptr.as<double>(), int);
+  EXPECT_EXCEPTION(d_ptr.as<int>(), int);
+
+  const int ci     = 1;
+  AnyPtr    ci_ptr = &ci;
+
+  EXPECT_EXCEPTION(i_ptr.as<const int>(), int); // TODO : Relax this.
+  EXPECT_EXCEPTION(ci_ptr.as<int>(), int);
+}
+
+// -----------------------------------------------------------------------------
 // SMALL UTILITIES
 // -----------------------------------------------------------------------------
 
