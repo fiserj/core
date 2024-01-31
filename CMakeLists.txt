@@ -20,6 +20,8 @@ project("Core")
 
 option(CORE_WITH_TESTS "Build core unit tests" ${PROJECT_IS_TOP_LEVEL})
 
+option(CORE_THROW_EXCEPTION_ON_PANIC "Throw exception instead of abort on panic" OFF)
+
 # ------------------------------------------------------------------------------
 # LIBRARY
 # ------------------------------------------------------------------------------
@@ -34,6 +36,12 @@ add_library(${NAME} STATIC
 target_include_directories(${NAME} PUBLIC
   .
 )
+
+if(CORE_THROW_EXCEPTION_ON_PANIC)
+  target_compile_definitions(${NAME} PRIVATE
+    THROW_EXCEPTION_ON_PANIC=1
+  )
+endif()
 
 if(MSVC)
   target_compile_options(${NAME} PRIVATE
