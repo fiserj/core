@@ -39,7 +39,7 @@ target_include_directories(${NAME} PUBLIC
 
 if(CORE_THROW_EXCEPTION_ON_PANIC)
   target_compile_definitions(${NAME} PRIVATE
-    THROW_EXCEPTION_ON_PANIC=1
+    CORE_THROW_EXCEPTION_ON_PANIC=1
   )
 endif()
 
@@ -91,7 +91,7 @@ if(CORE_WITH_TESTS)
   )
 
   target_compile_definitions(${NAME} PRIVATE
-    THROW_EXCEPTION_ON_PANIC=1
+    CORE_THROW_EXCEPTION_ON_PANIC=1
   )
 
   target_include_directories(${NAME} PRIVATE

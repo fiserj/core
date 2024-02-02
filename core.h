@@ -27,6 +27,26 @@
 #include <string.h> // memcpy, memset
 
 // -----------------------------------------------------------------------------
+// CONFIG
+// -----------------------------------------------------------------------------
+
+#if !defined(CORE_CONFIG_DEBUG_MODE)
+#  if defined(NDEBUG)
+#    define CORE_CONFIG_DEBUG_MODE 0
+#  else
+#    define CORE_CONFIG_DEBUG_MODE 1
+#  endif
+#endif
+
+#if !defined(CORE_NO_BOUNDS_CHECK)
+#  define CORE_NO_BOUNDS_CHECK 0
+#endif
+
+#if !defined(CORE_THROW_EXCEPTION_ON_PANIC)
+#  define CORE_THROW_EXCEPTION_ON_PANIC 0
+#endif
+
+// -----------------------------------------------------------------------------
 // UTILITY MACROS
 // -----------------------------------------------------------------------------
 
@@ -66,7 +86,7 @@ void panic_impl(int _line, const char* _msg, ...);
   if (_cond)                 \
   panic(__VA_ARGS__)
 
-#if (NO_BOUNDS_CHECK)
+#if (CORE_NO_BOUNDS_CHECK)
 #  define check_bounds(_cond) ((void)0)
 #else
 #  define check_bounds(_cond) \

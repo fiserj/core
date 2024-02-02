@@ -80,7 +80,7 @@ void panic_impl(int _line, const char* _msg, ...) {
 
   fprintf(stderr, "[core:%i] %s\n", _line, buf);
 
-#if defined(THROW_EXCEPTION_ON_PANIC)
+#if (CORE_THROW_EXCEPTION_ON_PANIC)
   throw _line;
 #else
   abort();
