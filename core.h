@@ -59,41 +59,57 @@ namespace core {
 // DEBUGGING
 // -----------------------------------------------------------------------------
 
-#if (_MSC_VER)
-#  define debug_break __debugbreak
-#elif (__has_builtin(__builtin_debugtrap))
-#  define debug_break __builtin_debugtrap
-#elif (__has_builtin(__builtin_trap))
-#  define debug_break __builtin_trap
+#if (CORE_CONFIG_DEBUG_MODE)
+#  define CORE_ASSERT(_cond)                                     \
+    do {                                                         \
+      if (!(_cond)) {                                            \
+        ::core::debug_msg(__FILE__, __LINE__, "assert", #_cond); \
+        ::core::debug_break();                                   \
+      }                                                          \
+    } while (0)
 #else
-#  define debug_break abort
+#  define CORE_ASSERT(_cond) ((void)0)
 #endif
 
-#define assert(_cond) \
-  if (!(_cond))       \
-  debug_break()
-
-namespace detail {
-
-void panic_impl(int _line, const char* _msg, ...);
-
-} // namespace detail
-
-#define panic(...)                             \
-  do {                                         \
-    detail::panic_impl(__LINE__, __VA_ARGS__); \
+#define CORE_PANIC(...)                             \
+  do {                                              \
+    ::core::panic(__FILE__, __LINE__, __VA_ARGS__); \
   } while (0)
 
-#define panic_if(_cond, ...) \
-  if (_cond)                 \
-  panic(__VA_ARGS__)
+#define CORE_PANIC_IF(_cond, ...) \
+  do {                            \
+    if (_cond)                    \
+      CORE_PANIC(__VA_ARGS__);    \
+  } while (0)
+
+inline void debug_break() {
+#if (_MSC_VER)
+  __debugbreak();
+#elif (__has_builtin(__builtin_debugtrap))
+  __builtin_debugtrap();
+#elif (__has_builtin(__builtin_trap))
+  __builtin_trap();
+#else
+  __asm__("int3");
+#endif
+}
 
 #if (CORE_CONFIG_NO_BOUNDS_CHECK)
-#  define check_bounds(_cond) ((void)0)
+#  define CORE_CHECK_BOUNDS(_cond) ((void)0)
 #else
-#  define check_bounds(_cond) \
-    panic_if(!(_cond), "Out of bounds: %s", #_cond)
+#  define CORE_CHECK_BOUNDS(_cond) \
+    CORE_PANIC_IF(!(_cond), "Bounds check failure: %s", #_cond)
 #endif
+
+struct Exception {
+  const char* file;
+  int         line;
+  char        msg[256];
+};
+
+void debug_msg(const char* _file, int _line, const char* _kind, const char* _msg, ...);
+
+void panic(const char* _file, int _line, const char* _msg, ...);
 
 // -----------------------------------------------------------------------------
 // SIZED TYPES' ALIASES
@@ -207,8 +223,8 @@ struct Deferred : NonCopyable {
 
 } // namespace detail
 
-#define defer(...) \
-  ::detail::Deferred CONCAT(deferred_, __LINE__)([&]() mutable { __VA_ARGS__; })
+#define CORE_DEFER(...) \
+  ::core::detail::Deferred CONCAT(deferred_, __LINE__)([&]() mutable { __VA_ARGS__; })
 
 // -----------------------------------------------------------------------------
 // SMALL UTILITIES
@@ -277,7 +293,7 @@ struct AnyPtr {
   template <typename T>
   T* as() const {
     if (type != TypeId<T> && type != TypeId<NonConst<T>>) {
-      panic("Failed to safely type-cast AnyPtr.");
+      CORE_PANIC("Failed to safely type-cast AnyPtr.");
       return nullptr;
     }
 
@@ -365,14 +381,14 @@ struct ISlice {
   }
 
   T& operator[](Index _i) const {
-    check_bounds(_i >= 0 && _i < len);
+    CORE_CHECK_BOUNDS(_i >= 0 && _i < len);
     return data[_i];
   }
 
   ISlice<T> operator()(Index _low, Index _high) const {
-    check_bounds(_low >= 0);
-    check_bounds(_low <= _high);
-    check_bounds(_high <= len);
+    CORE_CHECK_BOUNDS(_low >= 0);
+    CORE_CHECK_BOUNDS(_low <= _high);
+    CORE_CHECK_BOUNDS(_high <= len);
     return {
       .data = data + _low,
       .len  = _high - _low,
@@ -409,8 +425,8 @@ struct Slice<T, Dynamic> : ISlice<T> {
 
 template <typename T>
 Slice<T, Dynamic> make_slice(Size _len, Size _cap, Allocator& _alloc) {
-  assert(_len >= 0 && _len <= _cap);
-  assert(_alloc.alloc);
+  CORE_ASSERT(_len >= 0 && _len <= _cap);
+  CORE_ASSERT(_alloc.alloc);
 
   // TODO : Can we make this work with designated initializers?
   return {
@@ -476,7 +492,7 @@ void reserve(Slice<T, Dynamic>& _slice, Size _cap) {
 
 template <typename T>
 void resize(Slice<T, Dynamic>& _slice, Size _len) {
-  assert(_len >= 0);
+  CORE_ASSERT(_len >= 0);
 
   if (_len <= _slice.len) {
     _slice.len = _len;
@@ -522,13 +538,13 @@ void append(Slice<T, Dynamic>& _slice, const ISlice<Const<T>>& _values) {
 
 template <typename T>
 T& pop(Slice<T, Dynamic>& _slice) {
-  check_bounds(_slice.len > 0);
+  CORE_CHECK_BOUNDS(_slice.len > 0);
   return _slice.data[--_slice.len];
 }
 
 template <typename T>
 bool empty(const ISlice<T>& _slice) {
-  assert(_slice.len >= 0);
+  CORE_ASSERT(_slice.len >= 0);
   return _slice.len == 0;
 }
 
@@ -601,7 +617,7 @@ Ring<T> make_ring(ISlice<T>&& _buf) {
 template <typename T>
 void push(Ring<T>& _ring, const T& _value) {
   const Size head = (_ring.head + 1) % _ring.buf.len;
-  check_bounds(head != _ring.tail);
+  CORE_CHECK_BOUNDS(head != _ring.tail);
 
   _ring.buf[_ring.head] = _value;
   _ring.head            = head;
@@ -609,7 +625,7 @@ void push(Ring<T>& _ring, const T& _value) {
 
 template <typename T>
 T& pop(Ring<T>& _ring) {
-  check_bounds(_ring.head != _ring.tail);
+  CORE_CHECK_BOUNDS(_ring.head != _ring.tail);
 
   T& elem    = _ring.buf[_ring.tail];
   _ring.tail = (_ring.tail + 1) % _ring.buf.len;

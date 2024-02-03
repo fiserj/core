@@ -52,8 +52,8 @@ constexpr Size operator""_MiB(unsigned long long _x) {
 constexpr Size DEFAULT_SLAB_SIZE = 8_MiB;
 
 void copy(void* _dst, Size _dst_size, const void* _src, Size _src_size, bool _zero_mem) {
-  assert(_src_size >= 0);
-  assert(_src_size == 0 || _src);
+  CORE_ASSERT(_src_size >= 0);
+  CORE_ASSERT(_src_size == 0 || _src);
 
   if (_src_size > 0) {
     memcpy(_dst, _src, size_t(_src_size));
@@ -67,8 +67,38 @@ void copy(void* _dst, Size _dst_size, const void* _src, Size _src_size, bool _ze
 } // unnamed namespace
 
 // -----------------------------------------------------------------------------
-// PANIC
+// DEBUGGING
 // -----------------------------------------------------------------------------
+
+void debug_msg(const char* _file, int _line, const char* _kind, const char* _msg, ...) {
+  va_list args;
+  va_start(args, _msg);
+
+  char buf[sizeof(Exception::msg)];
+  (void)vsnprintf(buf, sizeof(buf), _msg, args);
+
+  va_end(args);
+
+  fprintf(stderr, "%s:%i: %s: %s\n", _file, _line, _kind, buf);
+}
+
+void panic(const char* _file, int _line, const char* _msg, ...) {
+  va_list args;
+  va_start(args, _msg);
+
+  Exception ex;
+  (void)vsnprintf(ex.msg, sizeof(ex.msg), _msg, args);
+
+  va_end(args);
+
+  fprintf(stderr, "%s:%i: panic: %s\n", _file, _line, ex.msg);
+
+#if (CORE_CONFIG_THROW_EXCEPTION_ON_PANIC)
+  throw ex;
+#else
+  abort();
+#endif
+}
 
 namespace detail {
 
@@ -96,7 +126,7 @@ void panic_impl(int _line, const char* _msg, ...) {
 // -----------------------------------------------------------------------------
 
 void* reallocate(Allocator& _alloc, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) {
-  panic_if(!_alloc.alloc, "Allocator is missing the `alloc` function callback.");
+  CORE_PANIC_IF(!_alloc.alloc, "Allocator is missing the `alloc` function callback.");
   return _alloc.alloc(_alloc.ctx, _ptr, _old, _new, _align, _flags);
 }
 
@@ -136,11 +166,11 @@ Allocator std_alloc() {
   const static Allocator alloc = {
     .ctx   = nullptr,
     .alloc = [](AnyPtr&, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
-      assert(_old >= 0);
-      assert(_new >= 0);
-      assert(is_power_of_two(_align));
+      CORE_ASSERT(_old >= 0);
+      CORE_ASSERT(_new >= 0);
+      CORE_ASSERT(is_power_of_two(_align));
 
-      panic_if(_flags & Allocator::FREE_ALL, "std_alloc() doesn't support FREE_ALL mode.");
+      CORE_PANIC_IF(_flags & Allocator::FREE_ALL, "std_alloc() doesn't support FREE_ALL mode.");
 
       if (_new <= 0) {
         aligned_free(_ptr);
@@ -153,7 +183,7 @@ Allocator std_alloc() {
 
       void* ptr = aligned_malloc(size, align);
       if (!ptr) {
-        panic_if(!(_flags & Allocator::NO_PANIC), "Failed to reallocate %td bytes aligned to a %td-byte boundary.", _new, _align);
+        CORE_PANIC_IF(!(_flags & Allocator::NO_PANIC), "Failed to reallocate %td bytes aligned to a %td-byte boundary.", _new, _align);
         return nullptr;
       }
 
@@ -206,7 +236,7 @@ Arena make_arena(ISlice<u8>&& _buf) {
 namespace {
 
 void* arena_alloc(Arena& _arena, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) {
-  assert(is_power_of_two(_align));
+  CORE_ASSERT(is_power_of_two(_align));
 
   if (_flags & Allocator::FREE_ALL) {
     _arena.head = 0;
@@ -219,7 +249,7 @@ void* arena_alloc(Arena& _arena, void* _ptr, Size _old, Size _new, Size _align, 
 
   Size offset = align_up(_arena.buf.data + _arena.head, _align) - _arena.buf.data;
   if (offset + _new > _arena.buf.len) {
-    panic_if(!(_flags & Allocator::NO_PANIC), "Failed to reallocate %td bytes aligned to a %td-byte boundary.", _new, _align);
+    CORE_PANIC_IF(!(_flags & Allocator::NO_PANIC), "Failed to reallocate %td bytes aligned to a %td-byte boundary.", _new, _align);
     return nullptr;
   }
 
@@ -237,7 +267,7 @@ Allocator make_alloc(Arena& _arena) {
   return {
     .ctx   = &_arena,
     .alloc = [](AnyPtr& _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
-      assert(_ctx);
+      CORE_ASSERT(_ctx);
       return arena_alloc(*_ctx.as<Arena>(), _ptr, _old, _new, _align, _flags);
     }};
 }
@@ -266,8 +296,8 @@ Allocator make_alloc(SlabArena& _arena) {
   return {
     .ctx   = &_arena,
     .alloc = [](AnyPtr& _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags) -> void* {
-      assert(_ctx);
-      assert(is_power_of_two(_align));
+      CORE_ASSERT(_ctx);
+      CORE_ASSERT(is_power_of_two(_align));
 
       SlabArena& arena = *_ctx.as<SlabArena>();
 
