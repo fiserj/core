@@ -2,16 +2,14 @@ name: Build & Test
 
 on: [push, pull_request]
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
-    name: ${{ matrix.config.name }}
+    name: ${{ matrix.config.name }} / ${{matrix.build_type}}
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
       matrix:
+        build_type: [Debug, Release]
         config:
         - {
             name: "Windows / MSVC",
@@ -45,10 +43,10 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Configure
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
 
     - name: Test
-      run: ${{github.workspace}}/bin/core_tests
+      run: ${{github.workspace}}/bin/core_tests${{matrix.build_type == 'Debug' && '_d' || ''}}
