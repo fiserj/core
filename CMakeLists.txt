@@ -18,9 +18,11 @@ project("Core")
 # OPTIONS
 # ------------------------------------------------------------------------------
 
-option(CORE_WITH_TESTS "Build core unit tests" ${PROJECT_IS_TOP_LEVEL})
+option(CORE_BUILD_TESTS "Build core unit tests" ${PROJECT_IS_TOP_LEVEL})
 
-option(CORE_THROW_EXCEPTION_ON_PANIC "Throw exception instead of abort on panic" OFF)
+option(CORE_CONFIG_NO_BOUNDS_CHECK "Turn off bounds checking" OFF)
+
+option(CORE_CONFIG_THROW_EXCEPTION_ON_PANIC "Throw exception instead of abort on panic" OFF)
 
 # ------------------------------------------------------------------------------
 # LIBRARY
@@ -37,9 +39,15 @@ target_include_directories(${NAME} PUBLIC
   .
 )
 
-if(CORE_THROW_EXCEPTION_ON_PANIC)
+if(CORE_CONFIG_NO_BOUNDS_CHECK)
   target_compile_definitions(${NAME} PRIVATE
-    CORE_THROW_EXCEPTION_ON_PANIC=1
+    CORE_CONFIG_NO_BOUNDS_CHECK=1
+  )
+endif()
+
+if(CORE_CONFIG_THROW_EXCEPTION_ON_PANIC)
+  target_compile_definitions(${NAME} PRIVATE
+    CORE_CONFIG_THROW_EXCEPTION_ON_PANIC=1
   )
 endif()
 
@@ -70,7 +78,7 @@ endif()
 # UNIT TESTS
 # ------------------------------------------------------------------------------
 
-if(CORE_WITH_TESTS)
+if(CORE_BUILD_TESTS)
   include(FetchContent)
 
   FetchContent_Declare(
@@ -91,7 +99,7 @@ if(CORE_WITH_TESTS)
   )
 
   target_compile_definitions(${NAME} PRIVATE
-    CORE_THROW_EXCEPTION_ON_PANIC=1
+    CORE_CONFIG_THROW_EXCEPTION_ON_PANIC=1
   )
 
   target_include_directories(${NAME} PRIVATE

@@ -26,6 +26,8 @@
 #include <stdint.h> // *int*_t, uintptr_t
 #include <string.h> // memcpy, memset
 
+namespace core {
+
 // -----------------------------------------------------------------------------
 // CONFIG
 // -----------------------------------------------------------------------------
@@ -38,12 +40,12 @@
 #  endif
 #endif
 
-#if !defined(CORE_NO_BOUNDS_CHECK)
-#  define CORE_NO_BOUNDS_CHECK 0
+#if !defined(CORE_CONFIG_NO_BOUNDS_CHECK)
+#  define CORE_CONFIG_NO_BOUNDS_CHECK 0
 #endif
 
-#if !defined(CORE_THROW_EXCEPTION_ON_PANIC)
-#  define CORE_THROW_EXCEPTION_ON_PANIC 0
+#if !defined(CORE_CONFIG_THROW_EXCEPTION_ON_PANIC)
+#  define CORE_CONFIG_THROW_EXCEPTION_ON_PANIC 0
 #endif
 
 // -----------------------------------------------------------------------------
@@ -86,7 +88,7 @@ void panic_impl(int _line, const char* _msg, ...);
   if (_cond)                 \
   panic(__VA_ARGS__)
 
-#if (CORE_NO_BOUNDS_CHECK)
+#if (CORE_CONFIG_NO_BOUNDS_CHECK)
 #  define check_bounds(_cond) ((void)0)
 #else
 #  define check_bounds(_cond) \
@@ -619,3 +621,5 @@ template <typename T>
 bool empty(const Ring<T>& _ring) {
   return _ring.head == _ring.tail;
 }
+
+} // namespace core
