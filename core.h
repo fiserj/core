@@ -572,7 +572,7 @@ size_t bytes(const ISlice<T>& _slice) {
 
 struct Arena {
   Slice<u8> buf;
-  Size      head;
+  Index     head;
 };
 
 Arena make_arena(ISlice<u8>&& _buf);
@@ -585,7 +585,7 @@ Allocator make_alloc(Arena& _arena);
 
 struct SlabArena {
   Slice<Slice<u8>, Dynamic> slabs;
-  Size                      head;
+  Index                     head;
 };
 
 SlabArena make_slab_arena(Allocator& _alloc);
@@ -603,8 +603,8 @@ void destroy(SlabArena& _arena);
 template <typename T>
 struct Ring {
   Slice<T> buf;
-  Size     head;
-  Size     tail;
+  Index    head;
+  Index    tail;
 };
 
 template <typename T>
