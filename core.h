@@ -609,6 +609,8 @@ struct Ring {
 
 template <typename T>
 Ring<T> make_ring(ISlice<T>&& _buf) {
+  debug_assert(_buf.len > 1);
+
   Ring<T> ring;
   ring.buf  = {{_buf.data, _buf.len}};
   ring.head = 0;
