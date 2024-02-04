@@ -10,8 +10,6 @@
 
 #include "core.h"
 
-using namespace core;
-
 // -----------------------------------------------------------------------------
 // COMMON
 // -----------------------------------------------------------------------------
@@ -22,12 +20,12 @@ static const u8 ZERO_MEM[1024] = {};
 // DEFERRED EXECUTION
 // -----------------------------------------------------------------------------
 
-UTEST(CORE_DEFER, order) {
+UTEST(defer, order) {
   int val = 1;
 
-  CORE_DEFER(ASSERT_EQ(val++, 3));
-  CORE_DEFER(ASSERT_EQ(val++, 2));
-  CORE_DEFER(ASSERT_EQ(val++, 1));
+  defer(ASSERT_EQ(val++, 3));
+  defer(ASSERT_EQ(val++, 2));
+  defer(ASSERT_EQ(val++, 1));
 }
 
 // -----------------------------------------------------------------------------
@@ -150,7 +148,7 @@ UTEST(std_alloc, zeroed_memory) {
   constexpr Size size = 13;
 
   void* mem = reallocate(alloc, nullptr, 0, size, 1);
-  CORE_DEFER(reallocate(alloc, mem, size, 0, 0));
+  defer(reallocate(alloc, mem, size, 0, 0));
 
   ASSERT_EQ(memcmp(mem, ZERO_MEM, size), 0);
 }
@@ -168,7 +166,7 @@ UTEST(std_alloc, alignment) {
 
   for (auto align : aligns) {
     void* mem = reallocate(alloc, nullptr, 0, size, align);
-    CORE_DEFER(reallocate(alloc, mem, size, 0, 0));
+    defer(reallocate(alloc, mem, size, 0, 0));
 
     ASSERT_EQ(mod(uintptr_t(mem), align), 0);
   }
@@ -269,7 +267,7 @@ UTEST(arena_alloc, free_all) {
 
 UTEST(SlabArena, make_slab_arena) {
   auto arena = make_slab_arena();
-  CORE_DEFER(destroy(arena));
+  defer(destroy(arena));
 
   ASSERT_EQ(arena.slabs.len, 1);
   ASSERT_EQ(&arena.slabs.alloc, &ctx_alloc());
@@ -278,7 +276,7 @@ UTEST(SlabArena, make_slab_arena) {
 
 UTEST(slab_arena_alloc, grow) {
   auto arena = make_slab_arena();
-  CORE_DEFER(destroy(arena));
+  defer(destroy(arena));
 
   Allocator alloc = make_alloc(arena);
 
@@ -365,7 +363,7 @@ UTEST(Slice, make_slice_array) {
 
 UTEST(Slice, make_slice_len) {
   auto slice = make_slice<int>(3);
-  CORE_DEFER(destroy(slice));
+  defer(destroy(slice));
 
   ASSERT_NE(slice.data, (int*)nullptr);
   ASSERT_EQ(slice.len, 3);
@@ -374,7 +372,7 @@ UTEST(Slice, make_slice_len) {
 
 UTEST(Slice, make_slice_len_cap) {
   auto slice = make_slice<int>(1, 3);
-  CORE_DEFER(destroy(slice));
+  defer(destroy(slice));
 
   ASSERT_NE(slice.data, (int*)nullptr);
   ASSERT_EQ(slice.len, 1);
@@ -383,7 +381,7 @@ UTEST(Slice, make_slice_len_cap) {
 
 UTEST(Slice, reserve) {
   auto slice = make_slice<int>(1, 2);
-  CORE_DEFER(destroy(slice));
+  defer(destroy(slice));
 
   slice[0] = 10;
 
@@ -406,7 +404,7 @@ UTEST(Slice, resize) {
   const int values[10] = {0, 1, 2};
 
   auto slice = make_slice<int>(1);
-  CORE_DEFER(destroy(slice));
+  defer(destroy(slice));
 
   ASSERT_EQ(slice.len, 1);
   ASSERT_LE(slice.len, slice.cap);
@@ -439,13 +437,13 @@ UTEST(Slice, resize) {
 
 UTEST(Slice, copy) {
   auto src = make_slice<int>(3);
-  CORE_DEFER(destroy(src));
+  defer(destroy(src));
   src[0] = 1;
   src[1] = 2;
   src[2] = 3;
 
   auto dst = make_slice<int>(3);
-  CORE_DEFER(destroy(dst));
+  defer(destroy(dst));
   copy(dst, src);
   ASSERT_EQ(memcmp(src.data, dst.data, 3 * sizeof(int)), 0);
 
@@ -462,7 +460,7 @@ UTEST(Slice, append_value) {
   const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
   auto slice = make_slice<int>(0, 1);
-  CORE_DEFER(destroy(slice));
+  defer(destroy(slice));
 
   for (int i = 0; i < 10; i++) {
     append(slice, values[i]);
@@ -476,7 +474,7 @@ UTEST(Slice, append_values) {
   const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
   auto slice = make_slice<int>(1);
-  CORE_DEFER(destroy(slice));
+  defer(destroy(slice));
 
   append(slice, make_slice(values + 1, 9));
   ASSERT_EQ(memcmp(slice.data, values, sizeof(values)), 0);
@@ -484,7 +482,7 @@ UTEST(Slice, append_values) {
 
 UTEST(Slice, pop) {
   auto slice = make_slice<int>(10);
-  CORE_DEFER(destroy(slice));
+  defer(destroy(slice));
 
   const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   copy(slice, make_slice(values));
@@ -515,7 +513,7 @@ UTEST(Slice, range_based_for) {
   const int twos[3] = {2, 2, 2};
 
   auto dynamic = make_slice<int>(3);
-  CORE_DEFER(destroy(dynamic));
+  defer(destroy(dynamic));
 
   for (int& value : dynamic) {
     value = 1;
@@ -606,7 +604,7 @@ int main(int _argc, char** _argv) {
 #else
   auto f = freopen("/dev/null", "w", stderr);
 #endif
-  CORE_DEFER(if (f) fclose(f));
+  defer(if (f) fclose(f));
 
   return utest_main(_argc, _argv);
 }

@@ -26,8 +26,6 @@
 #include <stdint.h> // *int*_t, uintptr_t
 #include <string.h> // memcpy, memset
 
-namespace core {
-
 // -----------------------------------------------------------------------------
 // CONFIG
 // -----------------------------------------------------------------------------
@@ -49,37 +47,25 @@ namespace core {
 #endif
 
 // -----------------------------------------------------------------------------
-// UTILITY MACROS
-// -----------------------------------------------------------------------------
-
-#define CONCAT_(_x, _y) _x##_y
-#define CONCAT(_x, _y)  CONCAT_(_x, _y)
-
-// -----------------------------------------------------------------------------
 // DEBUGGING
 // -----------------------------------------------------------------------------
 
 #if (CORE_CONFIG_DEBUG_MODE)
-#  define CORE_ASSERT(_cond)                                     \
-    do {                                                         \
-      if (!(_cond)) {                                            \
-        ::core::debug_msg(__FILE__, __LINE__, "assert", #_cond); \
-        ::core::debug_break();                                   \
-      }                                                          \
+#  define debug_assert(_cond)    \
+    do {                         \
+      if (!(_cond)) {            \
+        ::log("assert", #_cond); \
+        ::debug_break();         \
+      }                          \
     } while (0)
 #else
-#  define CORE_ASSERT(_cond) ((void)0)
+#  define debug_assert(_cond) ((void)0)
 #endif
 
-#define CORE_PANIC(...)                             \
-  do {                                              \
-    ::core::panic(__FILE__, __LINE__, __VA_ARGS__); \
-  } while (0)
-
-#define CORE_PANIC_IF(_cond, ...) \
-  do {                            \
-    if (_cond)                    \
-      CORE_PANIC(__VA_ARGS__);    \
+#define panic_if(_cond, ...) \
+  do {                       \
+    if (_cond)               \
+      ::panic(__VA_ARGS__);  \
   } while (0)
 
 inline void debug_break() {
@@ -95,10 +81,10 @@ inline void debug_break() {
 }
 
 #if (CORE_CONFIG_NO_BOUNDS_CHECK)
-#  define CORE_CHECK_BOUNDS(_cond) ((void)0)
+#  define check_bounds(_cond) ((void)0)
 #else
-#  define CORE_CHECK_BOUNDS(_cond) \
-    CORE_PANIC_IF(!(_cond), "Bounds check failure: %s", #_cond)
+#  define check_bounds(_cond) \
+    panic_if(!(_cond), "Bounds check failure: %s", #_cond)
 #endif
 
 struct Exception {
@@ -107,9 +93,22 @@ struct Exception {
   char        msg[256];
 };
 
-void debug_msg(const char* _file, int _line, const char* _kind, const char* _msg, ...);
+namespace detail {
 
-void panic(const char* _file, int _line, const char* _msg, ...);
+struct Fmt {
+  const char* fmt;
+  const char* file;
+  int         line;
+
+  constexpr Fmt(const char* _fmt, const char* _file = __builtin_FILE(), int _line = __builtin_LINE())
+    : fmt(_fmt), file(_file), line(_line) {}
+};
+
+} // namespace detail
+
+void log(const char* _kind, detail::Fmt _fmt, ...);
+
+[[noreturn]] void panic(detail::Fmt _fmt, ...);
 
 // -----------------------------------------------------------------------------
 // SIZED TYPES' ALIASES
@@ -223,8 +222,12 @@ struct Deferred : NonCopyable {
 
 } // namespace detail
 
-#define CORE_DEFER(...) \
-  ::core::detail::Deferred CONCAT(deferred_, __LINE__)([&]() mutable { __VA_ARGS__; })
+#define CONCAT_(_x, _y) _x##_y
+
+#define CONCAT(_x, _y) CONCAT_(_x, _y)
+
+#define defer(...) \
+  ::detail::Deferred CONCAT(deferred_, __LINE__)([&]() mutable { __VA_ARGS__; })
 
 // -----------------------------------------------------------------------------
 // SMALL UTILITIES
@@ -293,7 +296,7 @@ struct AnyPtr {
   template <typename T>
   T* as() const {
     if (type != TypeId<T> && type != TypeId<NonConst<T>>) {
-      CORE_PANIC("Failed to safely type-cast AnyPtr.");
+      panic("Failed to safely type-cast AnyPtr.");
       return nullptr;
     }
 
@@ -381,14 +384,14 @@ struct ISlice {
   }
 
   T& operator[](Index _i) const {
-    CORE_CHECK_BOUNDS(_i >= 0 && _i < len);
+    check_bounds(_i >= 0 && _i < len);
     return data[_i];
   }
 
   ISlice<T> operator()(Index _low, Index _high) const {
-    CORE_CHECK_BOUNDS(_low >= 0);
-    CORE_CHECK_BOUNDS(_low <= _high);
-    CORE_CHECK_BOUNDS(_high <= len);
+    check_bounds(_low >= 0);
+    check_bounds(_low <= _high);
+    check_bounds(_high <= len);
     return {
       .data = data + _low,
       .len  = _high - _low,
@@ -425,8 +428,8 @@ struct Slice<T, Dynamic> : ISlice<T> {
 
 template <typename T>
 Slice<T, Dynamic> make_slice(Size _len, Size _cap, Allocator& _alloc) {
-  CORE_ASSERT(_len >= 0 && _len <= _cap);
-  CORE_ASSERT(_alloc.alloc);
+  debug_assert(_len >= 0 && _len <= _cap);
+  debug_assert(_alloc.alloc);
 
   // TODO : Can we make this work with designated initializers?
   return {
@@ -492,7 +495,7 @@ void reserve(Slice<T, Dynamic>& _slice, Size _cap) {
 
 template <typename T>
 void resize(Slice<T, Dynamic>& _slice, Size _len) {
-  CORE_ASSERT(_len >= 0);
+  debug_assert(_len >= 0);
 
   if (_len <= _slice.len) {
     _slice.len = _len;
@@ -538,13 +541,13 @@ void append(Slice<T, Dynamic>& _slice, const ISlice<Const<T>>& _values) {
 
 template <typename T>
 T& pop(Slice<T, Dynamic>& _slice) {
-  CORE_CHECK_BOUNDS(_slice.len > 0);
+  check_bounds(_slice.len > 0);
   return _slice.data[--_slice.len];
 }
 
 template <typename T>
 bool empty(const ISlice<T>& _slice) {
-  CORE_ASSERT(_slice.len >= 0);
+  debug_assert(_slice.len >= 0);
   return _slice.len == 0;
 }
 
@@ -617,7 +620,7 @@ Ring<T> make_ring(ISlice<T>&& _buf) {
 template <typename T>
 void push(Ring<T>& _ring, const T& _value) {
   const Size head = (_ring.head + 1) % _ring.buf.len;
-  CORE_CHECK_BOUNDS(head != _ring.tail);
+  check_bounds(head != _ring.tail);
 
   _ring.buf[_ring.head] = _value;
   _ring.head            = head;
@@ -625,7 +628,7 @@ void push(Ring<T>& _ring, const T& _value) {
 
 template <typename T>
 T& pop(Ring<T>& _ring) {
-  CORE_CHECK_BOUNDS(_ring.head != _ring.tail);
+  check_bounds(_ring.head != _ring.tail);
 
   T& elem    = _ring.buf[_ring.tail];
   _ring.tail = (_ring.tail + 1) % _ring.buf.len;
@@ -637,5 +640,3 @@ template <typename T>
 bool empty(const Ring<T>& _ring) {
   return _ring.head == _ring.tail;
 }
-
-} // namespace core
