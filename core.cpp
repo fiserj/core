@@ -43,10 +43,6 @@ namespace {
 
 constexpr size_t DEFAULT_ALIGN = 2 * sizeof(void*);
 
-constexpr Size operator""_MiB(unsigned long long _x) {
-  return 1024 * 1024 * Size(_x);
-}
-
 constexpr Size DEFAULT_SLAB_SIZE = 8_MiB;
 
 void copy(void* _dst, Size _dst_size, const void* _src, Size _src_size, bool _zero_mem) {
