@@ -600,6 +600,8 @@ struct SlabArena {
   Index                     head;
 };
 
+SlabArena make_slab_arena(Allocator& _alloc, Size _slab_size);
+
 SlabArena make_slab_arena(Allocator& _alloc);
 
 SlabArena make_slab_arena();

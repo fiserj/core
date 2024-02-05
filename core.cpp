@@ -291,16 +291,20 @@ Allocator make_alloc(Arena& _arena) {
 // SLAB ARENA
 // -----------------------------------------------------------------------------
 
-SlabArena make_slab_arena(Allocator& _alloc) {
+SlabArena make_slab_arena(Allocator& _alloc, Size _slab_size) {
   SlabArena arena = {
     .slabs = make_slice<Slice<u8>>(0, 8, _alloc),
     .head  = 0,
   };
 
-  u8* data = (u8*)allocate(_alloc, DEFAULT_SLAB_SIZE, DEFAULT_ALIGN);
-  append(arena.slabs, make_slice(data, DEFAULT_SLAB_SIZE));
+  u8* data = (u8*)allocate(_alloc, _slab_size, DEFAULT_ALIGN);
+  append(arena.slabs, make_slice(data, _slab_size));
 
   return arena;
+}
+
+SlabArena make_slab_arena(Allocator& _alloc) {
+  return make_slab_arena(_alloc, DEFAULT_SLAB_SIZE);
 }
 
 SlabArena make_slab_arena() {
@@ -318,7 +322,7 @@ Allocator make_alloc(SlabArena& _arena) {
 
       if (_flags & Allocator::FREE_ALL) {
         for (Size i = 1; i < arena.slabs.len; i++) {
-          free(*arena.slabs.alloc, arena.slabs[i].data, DEFAULT_SLAB_SIZE);
+          free(*arena.slabs.alloc, arena.slabs[i].data, arena.slabs[i].len);
         }
 
         resize(arena.slabs, 1);
@@ -342,7 +346,7 @@ Allocator make_alloc(SlabArena& _arena) {
         return ptr;
       }
 
-      const Size size = max(_new, DEFAULT_SLAB_SIZE);
+      const Size size = max(_new, arena.slabs[0].len);
       if (void* ptr = reallocate(*arena.slabs.alloc, _ptr, _old, size, _align, _flags)) {
         append(arena.slabs, make_slice((u8*)ptr, size));
         arena.head = size;
