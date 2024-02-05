@@ -270,7 +270,7 @@ UTEST(SlabArena, make_slab_arena) {
   defer(destroy(arena));
 
   ASSERT_EQ(arena.slabs.len, 1);
-  ASSERT_EQ(&arena.slabs.alloc, &ctx_alloc());
+  ASSERT_EQ(arena.slabs.alloc, &ctx_alloc());
   ASSERT_EQ(arena.head, 0);
 }
 

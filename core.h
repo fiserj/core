@@ -435,7 +435,7 @@ struct Slice : ISlice<T> {};
 template <typename T>
 struct Slice<T, Dynamic> : ISlice<T> {
   Size       cap;
-  Allocator& alloc;
+  Allocator* alloc;
 };
 
 template <typename T>
@@ -448,7 +448,7 @@ Slice<T, Dynamic> make_slice(Size _len, Size _cap, Allocator& _alloc) {
     {(T*)allocate(_alloc, _cap * sizeof(T), alignof(T)),
      _len},
     _cap,
-    _alloc,
+    &_alloc,
   };
 }
 
@@ -492,7 +492,7 @@ Slice<T> make_slice(decltype(nullptr), Size) = delete;
 
 template <typename T>
 void destroy(Slice<T, Dynamic>& _slice) {
-  free(_slice.alloc, _slice.data, _slice.cap * sizeof(T));
+  free(*_slice.alloc, _slice.data, _slice.cap * sizeof(T));
 }
 
 template <typename T>
@@ -501,7 +501,7 @@ void reserve(Slice<T, Dynamic>& _slice, Size _cap) {
     return;
   }
 
-  _slice.data = (T*)reallocate(_slice.alloc, _slice.data, _slice.cap * sizeof(T), _cap * sizeof(T), alignof(T));
+  _slice.data = (T*)reallocate(*_slice.alloc, _slice.data, _slice.cap * sizeof(T), _cap * sizeof(T), alignof(T));
   _slice.cap  = _cap;
 }
 
