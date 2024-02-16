@@ -665,3 +665,15 @@ template <typename T>
 bool empty(const Ring<T>& _ring) {
   return _ring.head == _ring.tail;
 }
+
+// -----------------------------------------------------------------------------
+// FILE I/O
+// -----------------------------------------------------------------------------
+
+Slice<u8, Dynamic> read_bytes(const char* _path, Allocator& _alloc);
+
+Slice<u8, Dynamic> read_bytes(const char* _path);
+
+Slice<char, Dynamic> read_string(const char* _path, Allocator& _alloc);
+
+Slice<char, Dynamic> read_string(const char* _path);

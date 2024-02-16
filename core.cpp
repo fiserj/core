@@ -366,3 +366,41 @@ void destroy(SlabArena& _arena) {
 
   destroy(_arena.slabs);
 }
+
+// -----------------------------------------------------------------------------
+// FILE I/O
+// -----------------------------------------------------------------------------
+
+Slice<u8, Dynamic> read_bytes(const char* _path, Allocator& _alloc) {
+  FILE* file = fopen(_path, "rb");
+  if (!file) {
+    warn("Failed to open file '%s'.", _path);
+    return {};
+  }
+  defer(fclose(file));
+
+  fseek(file, 0, SEEK_END);
+  const Size size = ftell(file);
+  fseek(file, 0, SEEK_SET);
+
+  auto buf = make_slice<u8>(size, size + 1, _alloc);
+  panic_if(fread(buf.data, 1, size, file) != size_t(size), "Failed to read %td bytes from file '%s'.", size, _path);
+
+  return buf;
+}
+
+Slice<u8, Dynamic> read_bytes(const char* _path) {
+  return read_bytes(_path, ctx_alloc());
+}
+
+Slice<char, Dynamic> read_string(const char* _path, Allocator& _alloc) {
+  static_assert(sizeof(char) == sizeof(u8));
+
+  auto bytes = read_bytes(_path, _alloc);
+
+  return {{(char*)bytes.data, bytes.len}, bytes.cap, bytes.alloc};
+}
+
+Slice<char, Dynamic> read_string(const char* _path) {
+  return read_string(_path, ctx_alloc());
+}
