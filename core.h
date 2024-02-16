@@ -62,6 +62,15 @@
 #  define debug_assert(_cond) ((void)0)
 #endif
 
+#define warn(...) \
+  ::log("warn", __VA_ARGS__)
+
+#define warn_if(_cond, ...) \
+  do {                      \
+    if (_cond)              \
+      warn(__VA_ARGS__);    \
+  } while (0)
+
 #define panic_if(_cond, ...) \
   do {                       \
     if (_cond)               \
