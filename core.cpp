@@ -233,8 +233,7 @@ struct DefaultTempAlloc {
 
 Allocator& ctx_temp_alloc() {
   thread_local DefaultTempAlloc alloc;
-
-  return ctx_alloc();
+  return alloc.alloc;
 }
 
 // -----------------------------------------------------------------------------
