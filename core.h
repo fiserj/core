@@ -254,6 +254,11 @@ constexpr Size operator""_GiB(unsigned long long _x) {
   return 1024 * 1024 * 1024 * Size(_x);
 }
 
+template <typename T, Size N>
+constexpr Size countof(const T (&)[N]) noexcept {
+  return N;
+}
+
 template <typename T>
 constexpr T min(T _x, T _y) {
   return _x < _y ? _x : _y;
