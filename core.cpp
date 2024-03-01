@@ -222,12 +222,15 @@ Allocator& ctx_alloc() {
 
 struct DefaultTempAlloc {
   Allocator alloc;
-  Arena     arena;
-  u8        buf[4_MiB];
+  SlabArena arena;
 
   DefaultTempAlloc() {
-    arena = make_arena(make_slice(buf));
+    arena = make_slab_arena(ctx_alloc(), 4_MiB);
     alloc = make_alloc(arena);
+  }
+
+  ~DefaultTempAlloc() {
+    destroy(arena);
   }
 };
 
