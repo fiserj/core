@@ -243,7 +243,7 @@ Allocator& ctx_temp_alloc() {
 // SIMPLE ARENA
 // -----------------------------------------------------------------------------
 
-Arena make_arena(ISlice<u8>&& _buf) {
+Arena make_arena(ISlice<u8> _buf) {
   return {
     .buf  = {{_buf.data, _buf.len}},
     .head = 0,

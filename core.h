@@ -601,7 +601,7 @@ struct Arena {
   Index     head;
 };
 
-Arena make_arena(ISlice<u8>&& _buf);
+Arena make_arena(ISlice<u8> _buf);
 
 Allocator make_alloc(Arena& _arena);
 
@@ -636,7 +636,7 @@ struct Ring {
 };
 
 template <typename T>
-Ring<T> make_ring(ISlice<T>&& _buf) {
+Ring<T> make_ring(ISlice<T> _buf) {
   debug_assert(_buf.len > 1);
 
   Ring<T> ring;
