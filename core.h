@@ -275,6 +275,13 @@ constexpr T clamp(T _x, T _min, T _max) {
 }
 
 template <typename T>
+constexpr void swap(T& _x, T& _y) {
+  T tmp = _x;
+  _x    = _y;
+  _y    = tmp;
+}
+
+template <typename T>
 constexpr bool is_power_of_two(T _value) {
   return (_value & (_value - 1)) == 0;
 }

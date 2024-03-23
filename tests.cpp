@@ -112,6 +112,15 @@ UTEST(utils, clamp) {
   ASSERT_EQ(clamp(+3, 0, 2), 2);
 }
 
+UTEST(utils, swap) {
+  i32 x = 1;
+  i32 y = 2;
+  swap(x, y);
+
+  ASSERT_EQ(x, 2);
+  ASSERT_EQ(y, 1);
+}
+
 UTEST(utils, is_power_of_two) {
   ASSERT_TRUE(is_power_of_two(0));
   ASSERT_TRUE(is_power_of_two(1));
