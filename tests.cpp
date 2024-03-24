@@ -505,6 +505,54 @@ UTEST(Slice, pop) {
   EXPECT_EXCEPTION(pop(slice), Exception);
 }
 
+UTEST(Slice, remove_ordered) {
+  auto slice = make_slice<int>(5);
+  defer(destroy(slice));
+
+  const int values[5] = {0, 1, 2, 3, 4};
+  copy(slice, make_slice(values));
+
+  remove_ordered(slice, 4);
+  ASSERT_EQ(slice.len, 4);
+  ASSERT_EQ(slice[0], 0);
+  ASSERT_EQ(slice[1], 1);
+  ASSERT_EQ(slice[2], 2);
+  ASSERT_EQ(slice[3], 3);
+
+  remove_ordered(slice, 1);
+  ASSERT_EQ(slice.len, 3);
+  ASSERT_EQ(slice[0], 0);
+  ASSERT_EQ(slice[1], 2);
+  ASSERT_EQ(slice[2], 3);
+
+  EXPECT_EXCEPTION(remove_ordered(slice, 3), Exception);
+  EXPECT_EXCEPTION(remove_ordered(slice, -1), Exception);
+}
+
+UTEST(Slice, remove_unordered) {
+  auto slice = make_slice<int>(5);
+  defer(destroy(slice));
+
+  const int values[5] = {0, 1, 2, 3, 4};
+  copy(slice, make_slice(values));
+
+  remove_ordered(slice, 4);
+  ASSERT_EQ(slice.len, 4);
+  ASSERT_EQ(slice[0], 0);
+  ASSERT_EQ(slice[1], 1);
+  ASSERT_EQ(slice[2], 2);
+  ASSERT_EQ(slice[3], 3);
+
+  remove_ordered(slice, 1);
+  ASSERT_EQ(slice.len, 3);
+  ASSERT_EQ(slice[0], 0);
+  ASSERT_EQ(slice[1], 2);
+  ASSERT_EQ(slice[2], 3);
+
+  EXPECT_EXCEPTION(remove_ordered(slice, 3), Exception);
+  EXPECT_EXCEPTION(remove_ordered(slice, -1), Exception);
+}
+
 UTEST(Slice, begin_end) {
   const int array[3] = {1, 2, 3};
 

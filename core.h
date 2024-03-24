@@ -24,7 +24,7 @@
 
 #include <stddef.h> // ptrdiff_t, size_t
 #include <stdint.h> // *int*_t, uintptr_t
-#include <string.h> // memcpy, memset
+#include <string.h> // memcpy, memmove, memset
 
 // -----------------------------------------------------------------------------
 // CONFIG
@@ -576,6 +576,28 @@ template <typename T>
 T& pop(Slice<T, Dynamic>& _slice) {
   check_bounds(_slice.len > 0);
   return _slice.data[--_slice.len];
+}
+
+template <typename T>
+void remove_ordered(Slice<T, Dynamic>& _slice, Index _i) {
+  check_bounds(_i >= 0 && _i < _slice.len);
+
+  if (_i != _slice.len - 1) {
+    memmove(_slice.data + _i, _slice.data + _i + 1, size_t(_slice.len - _i - 1) * sizeof(T));
+  }
+
+  _slice.len--;
+}
+
+template <typename T>
+void remove_unordered(Slice<T, Dynamic>& _slice, Index _i) {
+  check_bounds(_i >= 0 && _i < _slice.len);
+
+  if (_i != _slice.len - 1) {
+    _slice.data[_i] = _slice.data[_slice.len - 1];
+  }
+
+  _slice.len--;
 }
 
 template <typename T>
