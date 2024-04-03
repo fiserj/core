@@ -332,6 +332,22 @@ UTEST(Slice, element_access) {
   EXPECT_EXCEPTION(slice[+4], Exception);
 }
 
+UTEST(Slice, back_element_access) {
+  int array[3] = {1, 2, 3};
+
+  const ISlice<int> slice = {
+    .data = array,
+    .len  = sizeof(array) / sizeof(array[0]),
+  };
+
+  ASSERT_EQ(slice[len - 1], 3);
+  ASSERT_EQ(slice[len - 2], 2);
+  ASSERT_EQ(slice[len - 3], 1);
+
+  EXPECT_EXCEPTION(slice[len], Exception);
+  EXPECT_EXCEPTION(slice[len - 4], Exception);
+}
+
 UTEST(Slice, subslicing) {
   // GCC is too smart and realizes we're effectively trying to do `ZERO_MEM[-1]`
   // in one of the tests (with the negative low index).

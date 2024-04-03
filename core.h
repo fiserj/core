@@ -400,6 +400,20 @@ void free_all();
 // SLICE
 // -----------------------------------------------------------------------------
 
+namespace detail {
+
+struct BackIndex {
+  Index val;
+};
+
+} // namespace detail
+
+constexpr detail::BackIndex len = {};
+
+constexpr detail::BackIndex operator-(detail::BackIndex _i, Index _j) {
+  return {_i.val - _j};
+}
+
 template <typename T>
 struct ISlice {
   T*   data;
@@ -419,6 +433,10 @@ struct ISlice {
   T& operator[](Index _i) const {
     check_bounds(_i >= 0 && _i < len);
     return data[_i];
+  }
+
+  T& operator[](detail::BackIndex _i) const {
+    return operator[](len + _i.val);
   }
 
   ISlice<T> operator()(Index _low, Index _high) const {
