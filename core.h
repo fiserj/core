@@ -481,6 +481,9 @@ struct Slice<T, Dynamic> : ISlice<T> {
 };
 
 template <typename T>
+using DynSlice = Slice<T, Dynamic>;
+
+template <typename T>
 Slice<T, Dynamic> make_slice(Size _len, Size _cap, Allocator& _alloc) {
   debug_assert(_len >= 0 && _len <= _cap);
   debug_assert(_alloc.alloc);
