@@ -854,6 +854,111 @@ UTEST(Vec2, dot) {
 }
 
 // -----------------------------------------------------------------------------
+// RECTANGLE
+// -----------------------------------------------------------------------------
+
+UTEST(Rect, size) {
+  const Rect a = {{1.0f, 2.0f}, {3.0f, 5.0f}};
+  const Vec2 b = size(a);
+
+  ASSERT_EQ(b.x, 2.0f);
+  ASSERT_EQ(b.y, 3.0f);
+}
+
+UTEST(Rect, width) {
+  const Rect a = {{1.0f, 2.0f}, {3.0f, 5.0f}};
+  const f32  b = width(a);
+
+  ASSERT_EQ(b, 2.0f);
+}
+
+UTEST(Rect, height) {
+  const Rect a = {{1.0f, 2.0f}, {3.0f, 5.0f}};
+  const f32  b = height(a);
+
+  ASSERT_EQ(b, 3.0f);
+}
+
+UTEST(Rect, aspect) {
+  const Rect a = {{1.0f, 2.0f}, {3.0f, 5.0f}};
+  const f32  b = aspect(a);
+
+  ASSERT_EQ(b, 2.0f / 3.0f);
+}
+
+UTEST(Rect, center) {
+  const Rect a = {{1.0f, 2.0f}, {3.0f, 5.0f}};
+  const Vec2 b = center(a);
+
+  ASSERT_EQ(b.x, 2.0f);
+  ASSERT_EQ(b.y, 3.5f);
+}
+
+UTEST(Rect, tl) {
+  const Rect a = {{1.0f, 2.0f}, {3.0f, 5.0f}};
+  const Vec2 b = tl(a);
+
+  ASSERT_EQ(b.x, 1.0f);
+  ASSERT_EQ(b.y, 5.0f);
+}
+
+UTEST(Rect, tr) {
+  const Rect a = {{1.0f, 2.0f}, {3.0f, 5.0f}};
+  const Vec2 b = tr(a);
+
+  ASSERT_EQ(b.x, 3.0f);
+  ASSERT_EQ(b.y, 5.0f);
+}
+
+UTEST(Rect, bl) {
+  const Rect a = {{1.0f, 2.0f}, {3.0f, 5.0f}};
+  const Vec2 b = bl(a);
+
+  ASSERT_EQ(b.x, 1.0f);
+  ASSERT_EQ(b.y, 2.0f);
+}
+
+UTEST(Rect, br) {
+  const Rect a = {{1.0f, 2.0f}, {3.0f, 5.0f}};
+  const Vec2 b = br(a);
+
+  ASSERT_EQ(b.x, 3.0f);
+  ASSERT_EQ(b.y, 2.0f);
+}
+
+UTEST(Rect, overlap_circle) {
+  const Rect a  = {{1.0f, 2.0f}, {3.0f, 5.0f}};
+  const f32  r2 = 0.5f * 0.5f;
+
+  ASSERT_TRUE(overlap(a, tl(a), r2));
+  ASSERT_TRUE(overlap(a, tr(a), r2));
+  ASSERT_TRUE(overlap(a, bl(a), r2));
+  ASSERT_TRUE(overlap(a, br(a), r2));
+
+  ASSERT_TRUE(overlap(a, center(a), r2));
+
+  ASSERT_TRUE(overlap(a, tl(a) + Vec2{-1.0f, +1.0f} * (0.5f / 1.41421356237f), r2));
+
+  ASSERT_FALSE(overlap(a, tl(a) + Vec2{-1.0f, +1.0f}, r2));
+  ASSERT_FALSE(overlap(a, tr(a) + Vec2{+1.0f, +1.0f}, r2));
+  ASSERT_FALSE(overlap(a, bl(a) + Vec2{-1.0f, -1.0f}, r2));
+  ASSERT_FALSE(overlap(a, br(a) + Vec2{+1.0f, -1.0f}, r2));
+}
+
+UTEST(Rect, overlap_rect) {
+  const Rect a = {{1.0f, 2.0f}, {3.0f, 5.0f}};
+
+  const Rect b = {{0.0f, 0.0f}, bl(a)};
+  ASSERT_TRUE(overlap(a, b));
+
+  const Rect c = {{0.0f, 0.0f}, bl(a) - Vec2{0.1f, 0.1f}};
+  ASSERT_FALSE(overlap(a, c));
+
+  const Rect d = {bl(a) + Vec2{0.1f, 0.1f}, tr(a) - Vec2{0.1f, 0.1f}};
+  ASSERT_TRUE(overlap(a, d));
+}
+
+// -----------------------------------------------------------------------------
 // 2D TRANSFORM
 // -----------------------------------------------------------------------------
 

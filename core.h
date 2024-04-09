@@ -895,6 +895,137 @@ constexpr f32 dot(Vec2 _u, Vec2 _v) {
 }
 
 // -----------------------------------------------------------------------------
+// RECTANGLE
+// -----------------------------------------------------------------------------
+
+/// 2D rectangle of single-precision floating-point numbers.
+///
+struct Rect {
+  Vec2 min;
+  Vec2 max;
+};
+
+/// Returns size of the rectangle.
+///
+/// @param[in] _rect Rectangle.
+///
+/// @return Size of the rectangle.
+///
+constexpr Vec2 size(const Rect& _rect) {
+  return _rect.max - _rect.min;
+}
+
+/// Returns width of the rectangle.
+///
+/// @param[in] _rect Rectangle.
+///
+/// @return Width of the rectangle.
+///
+constexpr f32 width(const Rect& _rect) {
+  return _rect.max.x - _rect.min.x;
+}
+
+/// Returns height of the rectangle.
+///
+/// @param[in] _rect Rectangle.
+///
+/// @return Height of the rectangle.
+///
+constexpr f32 height(const Rect& _rect) {
+  return _rect.max.y - _rect.min.y;
+}
+
+/// Returns aspect ratio (as width over height) of the rectangle.
+///
+/// @param[in] _rect Rectangle.
+///
+/// @return Aspect ratio of the rectangle.
+///
+constexpr f32 aspect(const Rect& _rect) {
+  return width(_rect) / height(_rect);
+}
+
+/// Returns center of the rectangle.
+///
+/// @param[in] _rect Rectangle.
+///
+/// @return Center of the rectangle.
+///
+constexpr Vec2 center(const Rect& _rect) {
+  return (_rect.min + _rect.max) * 0.5f;
+}
+
+/// Returns top-left corner of the rectangle.
+///
+/// @param[in] _rect Rectangle.
+///
+/// @return Top-left corner of the rectangle.
+///
+constexpr Vec2 tl(const Rect& _rect) {
+  return {_rect.min.x, _rect.max.y};
+}
+
+/// Returns top-right corner of the rectangle.
+///
+/// @param[in] _rect Rectangle.
+///
+/// @return Top-right corner of the rectangle.
+///
+constexpr Vec2 tr(const Rect& _rect) {
+  return _rect.max;
+}
+
+/// Returns bottom-left corner of the rectangle.
+///
+/// @param[in] _rect Rectangle.
+///
+/// @return Bottom-left corner of the rectangle.
+///
+constexpr Vec2 bl(const Rect& _rect) {
+  return _rect.min;
+}
+
+/// Returns bottom-right corner of the rectangle.
+///
+/// @param[in] _rect Rectangle.
+///
+/// @return Bottom-right corner of the rectangle.
+///
+constexpr Vec2 br(const Rect& _rect) {
+  return {_rect.max.x, _rect.min.y};
+}
+
+/// Checks if an axis-aligned rectangle and a circle overlap.
+///
+/// @param[in] _rect    Rectangle.
+/// @param[in] _center  Circle center.
+/// @param[in] _radius2 Squared circle radius.
+///
+/// @return `true` if the rectangle and the circle overlap, `false` otherwise.
+///
+constexpr bool overlap(const Rect& _rect, const Vec2 _center, f32 _radius2) {
+  const Vec2 closest   = clamp(_center, _rect.min, _rect.max);
+  const f32  distance2 = length2(_center - closest);
+
+  return distance2 <= _radius2;
+}
+
+/// Checks if two axis-aligned rectangles overlap.
+///
+/// @param[in] _a First rectangle.
+/// @param[in] _b Second rectangle.
+///
+/// @return `true` if the rectangles overlap, `false` otherwise.
+///
+constexpr bool overlap(const Rect& _a, const Rect& _b) {
+  return (
+    _a.min.x <= _b.max.x &&
+    _a.max.x >= _b.min.x &&
+    _a.min.y <= _b.max.y &&
+    _a.max.y >= _b.min.y);
+}
+
+// -----------------------------------------------------------------------------
 // 2D TRANSFORM
 // -----------------------------------------------------------------------------
 
