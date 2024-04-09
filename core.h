@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <math.h>   // sqrtf
 #include <stddef.h> // ptrdiff_t, size_t
 #include <stdint.h> // *int*_t, uintptr_t
 #include <string.h> // memcpy, memmove, memset
@@ -735,3 +736,160 @@ Slice<u8, Dynamic> read_bytes(const char* _path);
 Slice<char, Dynamic> read_string(const char* _path, Allocator& _alloc);
 
 Slice<char, Dynamic> read_string(const char* _path);
+
+// -----------------------------------------------------------------------------
+// 2D VECTOR
+// -----------------------------------------------------------------------------
+
+/// 2D vector of single-precision floating-point numbers.
+///
+struct Vec2 {
+  f32 x;
+  f32 y;
+};
+
+/// Negates (flips) a vector.
+///
+/// @param[in] _u Vector.
+///
+/// @return Negated vector.
+///
+constexpr Vec2 operator-(Vec2 _u) {
+  return {-_u.x, -_u.y};
+}
+
+/// Adds two vectors.
+///
+/// @param[in] _u First vector.
+/// @param[in] _v Second vector.
+///
+/// @return Sum of the two vectors.
+///
+constexpr Vec2 operator+(Vec2 _u, Vec2 _v) {
+  return {_u.x + _v.x, _u.y + _v.y};
+}
+
+/// Subtracts two vectors.
+///
+/// @param[in] _u First vector.
+/// @param[in] _v Second vector.
+///
+/// @return Difference of the two vectors.
+///
+constexpr Vec2 operator-(Vec2 _u, Vec2 _v) {
+  return {_u.x - _v.x, _u.y - _v.y};
+}
+
+/// Multiplies a vector by a scalar.
+///
+/// @param[in] _u Vector.
+/// @param[in] _s Scalar.
+///
+/// @return Scaled vector.
+///
+constexpr Vec2 operator*(Vec2 _u, f32 _s) {
+  return {_u.x * _s, _u.y * _s};
+}
+
+/// Computes vector's squared length.
+///
+/// @param[in] _v Vector.
+///
+/// @return Squared length of the vector.
+///
+constexpr f32 length2(Vec2 _v) {
+  return _v.x * _v.x + _v.y * _v.y;
+}
+
+/// Computes vector's length.
+///
+/// @param[in] _v Vector.
+///
+/// @return Length of the vector.
+///
+inline f32 length(Vec2 _v) {
+  return sqrtf(length2(_v));
+}
+
+/// Returns vector's minimum component.
+///
+/// @param[in] _v Vector.
+///
+/// @return Minimum component of the vector.
+///
+constexpr f32 min(Vec2 _v) {
+  return min(_v.x, _v.y);
+}
+
+/// Returns vector with minimum components.
+///
+/// @param _u First vector.
+/// @param _v Second vector.
+///
+/// @return Vector with minimum components.
+///
+constexpr Vec2 min(Vec2 _u, Vec2 _v) {
+  return {min(_u.x, _v.x), min(_u.y, _v.y)};
+}
+
+/// Returns vector's maximum component.
+///
+/// @param[in] _v Vector.
+///
+/// @return Maximum component of the vector.
+///
+constexpr f32 max(Vec2 _v) {
+  return max(_v.x, _v.y);
+}
+
+/// Returns vector with maximum components.
+///
+/// @param _u First vector.
+/// @param _v Second vector.
+///
+/// @return Vector with maximum components.
+///
+constexpr Vec2 max(Vec2 _u, Vec2 _v) {
+  return {max(_u.x, _v.x), max(_u.y, _v.y)};
+}
+
+/// Returns a normalized copy of the vector (with unit length).
+///
+/// @param[in] _v Vector.
+///
+/// @return Normalized vector.
+///
+inline Vec2 normalized(Vec2 _v) {
+  return _v * (1.0f / length(_v));
+}
+
+/// Returns a copy of the vector rotated by 90 degrees clockwise.
+///
+/// @param[in] _v Vector.
+///
+/// @return Vector rotated by 90 degrees clockwise.
+///
+constexpr Vec2 perpendicular_cw(Vec2 _v) {
+  return {_v.y, -_v.x};
+}
+
+/// Returns a copy of the vector rotated by 90 degrees counterclockwise.
+///
+/// @param[in] _v Vector.
+///
+/// @return Vector rotated by 90 degrees counterclockwise.
+///
+constexpr Vec2 perpendicular_ccw(Vec2 _v) {
+  return {-_v.y, _v.x};
+}
+
+/// Computes dot product of two vectors.
+///
+/// @param[in] _u First vector.
+/// @param[in] _v Second vector.
+///
+/// @return Dot product of the two vectors.
+///
+constexpr f32 dot(Vec2 _u, Vec2 _v) {
+  return _u.x * _v.x + _u.y * _v.y;
+}

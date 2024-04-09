@@ -666,6 +666,194 @@ UTEST(Ring, pop) {
 }
 
 // -----------------------------------------------------------------------------
+// 2D VECTOR
+// -----------------------------------------------------------------------------
+
+UTEST(Vec2, negation) {
+  const Vec2 a = {1.0f, 2.0f};
+  const Vec2 b = -a;
+
+  ASSERT_EQ(b.x, -1.0f);
+  ASSERT_EQ(b.y, -2.0f);
+
+  const Vec2 c = {};
+  const Vec2 d = -c;
+
+  ASSERT_EQ(d.x, 0.0f);
+  ASSERT_EQ(d.y, 0.0f);
+}
+
+UTEST(Vec2, subtraction) {
+  const Vec2 a = {1.0f, 4.0f};
+  const Vec2 b = {3.0f, 2.0f};
+  const Vec2 c = a - b;
+
+  ASSERT_EQ(c.x, -2.0f);
+  ASSERT_EQ(c.y, +2.0f);
+}
+
+UTEST(Vec2, addition) {
+  const Vec2 a = {1.0f, 2.0f};
+  const Vec2 b = {3.0f, 4.0f};
+  const Vec2 c = a + b;
+
+  ASSERT_EQ(c.x, 4.0f);
+  ASSERT_EQ(c.y, 6.0f);
+}
+
+UTEST(Vec2, multiplication_by_scalar) {
+  const Vec2 a = {1.0f, 2.0f};
+  const f32  b = 3.0f;
+  const Vec2 c = a * b;
+
+  ASSERT_EQ(c.x, 3.0f);
+  ASSERT_EQ(c.y, 6.0f);
+}
+
+UTEST(Vec2, length2) {
+  const Vec2 a = {3.0f, 4.0f};
+  const f32  b = length2(a);
+
+  ASSERT_EQ(b, 25.0f);
+}
+
+UTEST(Vec2, length) {
+  const Vec2 a = {3.0f, 4.0f};
+  const f32  b = length(a);
+
+  ASSERT_EQ(b, 5.0f);
+}
+
+UTEST(Vec2, min_component) {
+  const Vec2 a = {3.0f, 4.0f};
+  ASSERT_EQ(min(a), 3.0f);
+
+  const Vec2 b = {4.0f, 3.0f};
+  ASSERT_EQ(min(b), 3.0f);
+
+  const Vec2 c = {-3.0f, -4.0f};
+  ASSERT_EQ(min(c), -4.0f);
+
+  const Vec2 d = {-4.0f, -3.0f};
+  ASSERT_EQ(min(d), -4.0f);
+
+  const Vec2 e = {0.0f, 0.0f};
+  ASSERT_EQ(min(e), 0.0f);
+}
+
+UTEST(Vec2, max_component) {
+  const Vec2 a = {3.0f, 4.0f};
+  ASSERT_EQ(max(a), 4.0f);
+
+  const Vec2 b = {4.0f, 3.0f};
+  ASSERT_EQ(max(b), 4.0f);
+
+  const Vec2 c = {-3.0f, -4.0f};
+  ASSERT_EQ(max(c), -3.0f);
+
+  const Vec2 d = {-4.0f, -3.0f};
+  ASSERT_EQ(max(d), -3.0f);
+
+  const Vec2 e = {0.0f, 0.0f};
+  ASSERT_EQ(max(e), 0.0f);
+}
+
+UTEST(Vec2, max) {
+  const Vec2 a = {1.0f, 2.0f};
+  const Vec2 b = {3.0f, 4.0f};
+  const Vec2 c = max(a, b);
+
+  ASSERT_EQ(c.x, 3.0f);
+  ASSERT_EQ(c.y, 4.0f);
+
+  const Vec2 d = {4.0f, 3.0f};
+  const Vec2 e = max(a, d);
+
+  ASSERT_EQ(e.x, 4.0f);
+  ASSERT_EQ(e.y, 3.0f);
+}
+
+UTEST(Vec2, min) {
+  const Vec2 a = {1.0f, 2.0f};
+  const Vec2 b = {3.0f, 4.0f};
+  const Vec2 c = min(a, b);
+
+  ASSERT_EQ(c.x, 1.0f);
+  ASSERT_EQ(c.y, 2.0f);
+
+  const Vec2 d = {4.0f, 3.0f};
+  const Vec2 e = min(a, d);
+
+  ASSERT_EQ(e.x, 1.0f);
+  ASSERT_EQ(e.y, 2.0f);
+}
+
+UTEST(Vec2, normalized) {
+  const Vec2 a = {3.0f, 4.0f};
+  const Vec2 b = normalized(a);
+
+  ASSERT_EQ(length(b), 1.0f);
+
+  const f32 ar = a.x / a.y;
+  const f32 br = b.x / b.y;
+
+  ASSERT_EQ(ar - br, 0.0f);
+}
+
+UTEST(Vec2, perpendicular_cw) {
+  const Vec2 a = {1.0f, 2.0f};
+  const Vec2 b = perpendicular_cw(a);
+
+  ASSERT_EQ(a.x * b.x + a.y * b.y, 0.0f);
+
+  const Vec2 c = {1.0f, 0.0f};
+  const Vec2 d = perpendicular_cw(c);
+
+  ASSERT_EQ(d.x, 0.0f);
+  ASSERT_EQ(d.y, -1.0f);
+
+  const Vec2 e = {0.0f, 1.0f};
+  const Vec2 f = perpendicular_cw(e);
+
+  ASSERT_EQ(f.x, 1.0f);
+  ASSERT_EQ(f.y, 0.0f);
+}
+
+UTEST(Vec2, perpendicular_ccw) {
+  const Vec2 a = {1.0f, 2.0f};
+  const Vec2 b = perpendicular_ccw(a);
+
+  ASSERT_EQ(a.x * b.x + a.y * b.y, 0.0f);
+
+  const Vec2 c = {1.0f, 0.0f};
+  const Vec2 d = perpendicular_ccw(c);
+
+  ASSERT_EQ(d.x, 0.0f);
+  ASSERT_EQ(d.y, 1.0f);
+
+  const Vec2 e = {0.0f, 1.0f};
+  const Vec2 f = perpendicular_ccw(e);
+
+  ASSERT_EQ(f.x, -1.0f);
+  ASSERT_EQ(f.y, 0.0f);
+}
+
+UTEST(Vec2, dot) {
+  const Vec2 a = {1.0f, 2.0f};
+  const Vec2 b = {3.0f, 4.0f};
+  const f32  c = dot(a, b);
+
+  ASSERT_EQ(c, 11.0f);
+
+  const Vec2 d = {4.0f, 3.0f};
+  const f32  e = dot(d, perpendicular_cw(d));
+  const f32  f = dot(d, perpendicular_ccw(d));
+
+  ASSERT_EQ(e, 0.0f);
+  ASSERT_EQ(f, 0.0f);
+}
+
+// -----------------------------------------------------------------------------
 // MAIN
 // -----------------------------------------------------------------------------
 
