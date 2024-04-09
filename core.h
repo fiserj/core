@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <math.h>   // sqrtf
+#include <math.h>   // cosf, sinf, sqrtf
 #include <stddef.h> // ptrdiff_t, size_t
 #include <stdint.h> // *int*_t, uintptr_t
 #include <string.h> // memcpy, memmove, memset
@@ -892,4 +892,129 @@ constexpr Vec2 perpendicular_ccw(Vec2 _v) {
 ///
 constexpr f32 dot(Vec2 _u, Vec2 _v) {
   return _u.x * _v.x + _u.y * _v.y;
+}
+
+// -----------------------------------------------------------------------------
+// 2D TRANSFORM
+// -----------------------------------------------------------------------------
+
+/// 3x3 matrix with third row implicitly `[0 0 1]`.
+/// `| a c e |`
+/// `| b d f |`
+/// `| 0 0 1 |`
+///
+struct Transform2 {
+  f32 a;
+  f32 b;
+  f32 c;
+  f32 d;
+  f32 e;
+  f32 f;
+};
+
+/// Multiplies two transformations.
+///
+/// @param[in] _M First transformation.
+/// @param[in] _N Second transformation.
+///
+/// @return Product of the two transformations.
+///
+constexpr Transform2 operator*(const Transform2& _M, const Transform2& _N) {
+  return {
+    _M.a * _N.a + _M.c * _N.b,
+    _M.b * _N.a + _M.d * _N.b,
+    _M.a * _N.c + _M.c * _N.d,
+    _M.b * _N.c + _M.d * _N.d,
+    _M.a * _N.e + _M.c * _N.f + _M.e,
+    _M.b * _N.e + _M.d * _N.f + _M.f,
+  };
+}
+
+/// Transforms a vector by a transformation.
+///
+/// @param[in] _M Transformation.
+/// @param[in] _v Vector.
+///
+/// @return Transformed vector.
+///
+constexpr Vec2 operator*(const Transform2& _M, const Vec2& _v) {
+  return {
+    _M.a * _v.x + _M.c * _v.y + _M.e,
+    _M.b * _v.x + _M.d * _v.y + _M.f,
+  };
+}
+
+/// Creates an identity transformation.
+///
+/// @return Identity transformation.
+///
+constexpr Transform2 identity() {
+  return {1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f};
+}
+
+/// Creates a translation transformation.
+///
+/// @param[in] _x Translation in X-axis.
+/// @param[in] _y Translation in Y-axis.
+///
+/// @return Translation transformation.
+///
+constexpr Transform2 translate(f32 _x, f32 _y) {
+  return {1.0f, 0.0f, 0.0f, 1.0f, _x, _y};
+}
+
+/// Creates a uniform scaling transformation.
+///
+/// @param[in] _s Scale factor.
+///
+/// @return Scaling transformation.
+///
+constexpr Transform2 scale(f32 _s) {
+  return {_s, 0.0f, 0.0f, _s, 0.0f, 0.0f};
+}
+
+/// Creates a counterclockwise rotation transformation.
+///
+/// @param[in] _turns Number of turns.
+///
+/// @return Rotation transformation.
+///
+inline Transform2 rotate_ccw(f32 _turns) {
+  const f32 angle = _turns * 6.283185307179586f;
+
+  const f32 c = cosf(angle);
+  const f32 s = sinf(angle);
+
+  return {c, s, -s, c, 0.0f, 0.0f};
+}
+
+/// Creates a clockwise rotation transformation.
+///
+/// @param[in] _turns Number of turns.
+///
+/// @return Rotation transformation.
+///
+inline Transform2 rotate_cw(f32 _turns) {
+  return rotate_ccw(-_turns);
+}
+
+/// Creates a tranformation that maps one axis-aligned rectangle onto another.
+/// Supports mismatched Y-axis direction (simply make the rectangle's `max.y`
+/// smaller than its `min.y`).
+///
+/// @param[in] _src Source rectangle.
+/// @param[in] _dst Destination rectangle.
+///
+/// @return Transformation matrix.
+///
+constexpr Transform2 map_rect_to_rect(const Rect& _src, const Rect& _dst) {
+  const auto src_size = size(_src);
+  const auto dst_size = size(_dst);
+
+  const f32 a = dst_size.x / src_size.x;
+  const f32 d = dst_size.y / src_size.y;
+  const f32 e = _dst.min.x - _src.min.x * a;
+  const f32 f = _dst.min.y - _src.min.y * d;
+
+  return {a, 0.0f, 0.0f, d, e, f};
 }

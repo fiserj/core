@@ -854,6 +854,103 @@ UTEST(Vec2, dot) {
 }
 
 // -----------------------------------------------------------------------------
+// 2D TRANSFORM
+// -----------------------------------------------------------------------------
+
+UTEST(Transform2, identity) {
+  const auto I = identity();
+  const Vec2 a = {1.0f, 2.0f};
+  const Vec2 b = I * a;
+
+  ASSERT_EQ(a.x, b.x);
+  ASSERT_EQ(a.y, b.y);
+
+  const Vec2 c = {-3.0f, -4.0f};
+  const Vec2 d = I * c;
+
+  ASSERT_EQ(c.x, d.x);
+  ASSERT_EQ(c.y, d.y);
+}
+
+UTEST(Transform2, translate) {
+  const auto M = translate(1.0f, 2.0f);
+  const Vec2 a = {1.0f, 2.0f};
+  const Vec2 b = M * a;
+
+  ASSERT_EQ(b.x, 2.0f);
+  ASSERT_EQ(b.y, 4.0f);
+
+  const Vec2 c = {-3.0f, -4.0f};
+  const Vec2 d = M * c;
+
+  ASSERT_EQ(d.x, -2.0f);
+  ASSERT_EQ(d.y, -2.0f);
+}
+
+UTEST(Transform2, scale) {
+  const auto M = scale(2.0f);
+  const Vec2 a = {1.0f, 2.0f};
+  const Vec2 b = M * a;
+
+  ASSERT_EQ(b.x, 2.0f);
+  ASSERT_EQ(b.y, 4.0f);
+
+  const auto N = scale(-0.5f);
+  const Vec2 c = N * a;
+
+  ASSERT_EQ(c.x, -0.5f);
+  ASSERT_EQ(c.y, -1.0f);
+}
+
+UTEST(Transform2, rotate_cw) {
+  const auto M = rotate_cw(0.5f);
+  const Vec2 a = {2.0f, -1.0f};
+  const Vec2 b = M * a;
+
+  ASSERT_NEAR(b.x, -2.0f, 1e-6f);
+  ASSERT_NEAR(b.y, +1.0f, 1e-6f);
+
+  const auto N = rotate_cw(0.25f);
+  const Vec2 c = N * a;
+
+  ASSERT_NEAR(c.x, -1.0f, 1e-6f);
+  ASSERT_NEAR(c.y, -2.0f, 1e-6f);
+}
+
+UTEST(Transform2, rotate_ccw) {
+  const auto M = rotate_ccw(0.5f);
+  const Vec2 a = {2.0f, -1.0f};
+  const Vec2 b = M * a;
+
+  ASSERT_NEAR(b.x, -2.0f, 1e-6f);
+  ASSERT_NEAR(b.y, +1.0f, 1e-6f);
+
+  const auto N = rotate_ccw(0.25f);
+  const Vec2 c = N * a;
+
+  ASSERT_NEAR(c.x, 1.0f, 1e-6f);
+  ASSERT_NEAR(c.y, 2.0f, 1e-6f);
+}
+
+UTEST(Transform2, map_rect_to_rect) {
+  const Rect s = {{-1.0f, -2.0f}, {3.0f, 4.0f}};
+  const Rect d = {{+1.0f, +0.0f}, {8.0f, 1.0f}};
+  const auto M = map_rect_to_rect(s, d);
+
+  ASSERT_NEAR((M * tl(s)).x, tl(d).x, 1e-6f);
+  ASSERT_NEAR((M * tl(s)).y, tl(d).y, 1e-6f);
+
+  ASSERT_NEAR((M * tr(s)).x, tr(d).x, 1e-6f);
+  ASSERT_NEAR((M * tr(s)).y, tr(d).y, 1e-6f);
+
+  ASSERT_NEAR((M * bl(s)).x, bl(d).x, 1e-6f);
+  ASSERT_NEAR((M * bl(s)).y, bl(d).y, 1e-6f);
+
+  ASSERT_NEAR((M * br(s)).x, br(d).x, 1e-6f);
+  ASSERT_NEAR((M * br(s)).y, br(d).y, 1e-6f);
+}
+
+// -----------------------------------------------------------------------------
 // MAIN
 // -----------------------------------------------------------------------------
 
