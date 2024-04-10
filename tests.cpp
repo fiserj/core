@@ -854,6 +854,64 @@ UTEST(Vec2, dot) {
 }
 
 // -----------------------------------------------------------------------------
+// 1D RANGE
+// -----------------------------------------------------------------------------
+
+UTEST(Range, overlap) {
+  const Range a = {1.0f, 3.0f};
+
+  const Range b = {0.0f, 2.0f};
+  ASSERT_TRUE(overlap(a, b));
+
+  const Range c = {0.0f, 1.0f};
+  ASSERT_TRUE(overlap(a, c));
+
+  const Range d = {3.0f, 4.0f};
+  ASSERT_TRUE(overlap(a, d));
+
+  const Range e = {1.5f, 2.5f};
+  ASSERT_TRUE(overlap(a, e));
+
+  const Range f = {-1.0f, 0.0f};
+  ASSERT_FALSE(overlap(a, f));
+
+  const Range g = {4.0f, 5.0f};
+  ASSERT_FALSE(overlap(a, g));
+}
+
+UTEST(Range, min_max_2) {
+  const Range a = min_max(0.0f, 1.0f);
+  ASSERT_EQ(a.min, 0.0f);
+  ASSERT_EQ(a.max, 1.0f);
+
+  const Range b = min_max(1.0f, 0.0f);
+  ASSERT_EQ(b.min, 0.0f);
+  ASSERT_EQ(b.max, 1.0f);
+
+  const Range c = min_max(1.0f, 1.0f);
+  ASSERT_EQ(c.min, 1.0f);
+  ASSERT_EQ(c.max, 1.0f);
+}
+
+UTEST(Range, min_max_4) {
+  const Range a = min_max(0.0f, 1.0f, 2.0f, 3.0f);
+  ASSERT_EQ(a.min, 0.0f);
+  ASSERT_EQ(a.max, 3.0f);
+
+  const Range b = min_max(3.0f, 2.0f, 1.0f, 0.0f);
+  ASSERT_EQ(b.min, 0.0f);
+  ASSERT_EQ(b.max, 3.0f);
+
+  const Range c = min_max(1.0f, 3.0f, 0.0f, 2.0f);
+  ASSERT_EQ(c.min, 0.0f);
+  ASSERT_EQ(c.max, 3.0f);
+
+  const Range d = min_max(2.0f, 0.0f, 3.0f, 1.0f);
+  ASSERT_EQ(d.min, 0.0f);
+  ASSERT_EQ(d.max, 3.0f);
+}
+
+// -----------------------------------------------------------------------------
 // RECTANGLE
 // -----------------------------------------------------------------------------
 

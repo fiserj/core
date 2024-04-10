@@ -891,6 +891,66 @@ constexpr f32 dot(Vec2 _u, Vec2 _v) {
 }
 
 // -----------------------------------------------------------------------------
+// 1D RANGE
+// -----------------------------------------------------------------------------
+
+/// 1D range of single-precision floating-point numbers.
+struct Range {
+  f32 min;
+  f32 max;
+};
+
+/// Checks if two ranges overlap. Assumes that each range's minimum is less than
+/// or equal to its maximum.
+///
+/// @param[in] _a First range.
+/// @param[in] _b Second range.
+///
+/// @return `true` if the ranges overlap, `false` otherwise.
+///
+constexpr bool overlap(Range _a, Range _b) {
+  return (_a.min <= _b.max) && (_b.min <= _a.max);
+}
+
+/// Constructs a range from two numbers, assignig the smaller number to `min`
+/// and the larger number to `max`.
+///
+/// @param[in] _a First number.
+/// @param[in] _b Second number.
+///
+/// @return Range of numbers.
+///
+constexpr Range min_max(f32 _a, f32 _b) {
+  return _a < _b ? Range{_a, _b} : Range{_b, _a};
+}
+
+/// Constructs a range from four numbers, assignig the smallest number to `min`
+/// and the largest number to `max`.
+///
+/// @param[in] _a First number.
+/// @param[in] _b Second number.
+/// @param[in] _c Third number.
+/// @param[in] _d Fourth number.
+///
+/// @return Range of numbers.
+///
+constexpr Range min_max(f32 _a, f32 _b, f32 _c, f32 _d) {
+  auto r = min_max(_a, _b);
+
+  // clang-format off
+  if (_c < _d) {
+    if (_c < r.min) r.min = _c;
+    if (_d > r.max) r.max = _d;
+  } else {
+    if (_d < r.min) r.min = _d;
+    if (_c > r.max) r.max = _c;
+  }
+  // clang-format on
+
+  return r;
+}
+
+// -----------------------------------------------------------------------------
 // RECTANGLE
 // -----------------------------------------------------------------------------
 
