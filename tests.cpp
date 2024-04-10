@@ -147,6 +147,35 @@ UTEST(utils, align_up) {
   ASSERT_EQ(align_up(16, 128), 128);
 }
 
+UTEST(utils, pack_as_u16) {
+  ASSERT_EQ(pack_as_u16(0.0f, 65535.0f, 0.0f), u16(0));
+  ASSERT_EQ(pack_as_u16(0.5f, 65535.0f, 0.0f), u16(32768));
+  ASSERT_EQ(pack_as_u16(1.0f, 65535.0f, 0.0f), u16(65535));
+
+  ASSERT_EQ(pack_as_u16(-1.0f, 32767.5f, 1.0f), u16(0));
+  ASSERT_EQ(pack_as_u16(+0.0f, 32767.5f, 1.0f), u16(32768));
+  ASSERT_EQ(pack_as_u16(+1.0f, 32767.5f, 1.0f), u16(65535));
+}
+
+UTEST(utils, pack_as_2xu_16) {
+  const f32 x = -0.25f;
+  const f32 y = +0.75f;
+
+  const f32 scale = 32767.5f;
+  const f32 shift = 1.0f;
+
+  union Pack {
+    u32 as_u32;
+    u16 as_u16[2];
+  };
+
+  Pack pack;
+  pack.as_u32 = pack_as_2xu_16(x, y, scale, shift);
+
+  ASSERT_EQ(pack.as_u16[0], pack_as_u16(x, scale, shift));
+  ASSERT_EQ(pack.as_u16[1], pack_as_u16(y, scale, shift));
+}
+
 // -----------------------------------------------------------------------------
 // ALLOCATORS
 // -----------------------------------------------------------------------------

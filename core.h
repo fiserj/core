@@ -309,6 +309,27 @@ constexpr T* align_up(T* _ptr, A _align) {
   return conv.ptr;
 }
 
+/// Packs a floating-point number into a 16-bit unsigned integer.
+///
+/// @param[in] _x     Floating-point number to pack.
+/// @param[in] _scale Scale factor.
+/// @param[in] _shift Shift.
+constexpr u16 pack_as_u16(f32 _x, f32 _scale, f32 _shift) {
+  return u16((_x + _shift) * _scale + 0.5f);
+}
+
+/// Packs two floating-point numbers into a 32-bit unsigned integer. Each number
+/// is packed into 16 bits.
+///
+/// @param[in] _x     First floating-point number to pack.
+/// @param[in] _y     Second floating-point number to pack.
+/// @param[in] _scale Scale factor.
+/// @param[in] _shift Shift.
+///
+constexpr u32 pack_as_2xu_16(f32 _x, f32 _y, f32 _scale, f32 _shift) {
+  return (pack_as_u16(_y, _scale, _shift) << 16) | pack_as_u16(_x, _scale, _shift);
+}
+
 // -----------------------------------------------------------------------------
 // ANY PTR
 // -----------------------------------------------------------------------------
