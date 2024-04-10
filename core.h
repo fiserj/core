@@ -332,11 +332,7 @@ struct AnyPtr {
 
   template <typename T>
   T* as() const {
-    if (type != TypeId<T> && type != TypeId<NonConst<T>>) {
-      panic("Failed to safely type-cast AnyPtr.");
-      return nullptr;
-    }
-
+    panic_if(type != TypeId<T> && type != TypeId<NonConst<T>>, "Failed to safely type-cast AnyPtr.");
     return static_cast<T*>(const_cast<void*>(ptr));
   }
 };
@@ -586,15 +582,15 @@ void append(Slice<T, Dynamic>& _slice, const T& _value) {
 
 template <typename T>
 void append(Slice<T, Dynamic>& _slice, const ISlice<Const<T>>& _values) {
-  const Size low = _slice.len;
-  const Size len = _slice.len + _values.len;
+  const Size low  = _slice.len;
+  const Size high = _slice.len + _values.len;
 
-  if (len >= _slice.cap) {
-    reserve(_slice, detail::next_cap(_slice.cap, len));
+  if (high >= _slice.cap) {
+    reserve(_slice, detail::next_cap(_slice.cap, high));
   }
 
-  _slice.len = len;
-  copy(_slice(low, len), _values);
+  _slice.len = high;
+  copy(_slice(low, high), _values);
 }
 
 template <typename T>

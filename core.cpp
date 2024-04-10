@@ -26,7 +26,7 @@
 #include <stdio.h>  // fprintf, stderr
 #include <stdlib.h> // abort, aligned_alloc, free
 
-#if (_MSC_VER)
+#if defined(_MSC_VER)
 #  include <malloc.h> // _aligned_free, _aligned_malloc
 #  define aligned_malloc(_size, _align) ::_aligned_malloc(_size, _align)
 #  define aligned_free(_ptr)            ::_aligned_free(_ptr)
@@ -83,6 +83,7 @@ void panic(detail::Fmt _fmt, ...) {
   Exception ex = {
     .file = _fmt.file,
     .line = _fmt.line,
+    .msg  = {0},
   };
   (void)vsnprintf(ex.msg, sizeof(ex.msg), _fmt.fmt, args);
 
@@ -374,19 +375,26 @@ void destroy(SlabArena& _arena) {
 // -----------------------------------------------------------------------------
 
 Slice<u8, Dynamic> read_bytes(const char* _path, Allocator& _alloc) {
+#if defined(_MSC_VER)
+  // We could use _CRT_SECURE_NO_WARNINGS but would have to put it in the header
+  // file because some of the headers included there transitively pull in stdio.
+  FILE* file = nullptr;
+  if (fopen_s(&file, _path, "rb")) {
+#else
   FILE* file = fopen(_path, "rb");
   if (!file) {
+#endif
     warn("Failed to open file '%s'.", _path);
     return {};
   }
   defer(fclose(file));
 
   fseek(file, 0, SEEK_END);
-  const Size size = ftell(file);
+  const long size = ftell(file);
   fseek(file, 0, SEEK_SET);
 
   auto buf = make_slice<u8>(size, size + 1, _alloc);
-  panic_if(fread(buf.data, 1, size, file) != size_t(size), "Failed to read %td bytes from file '%s'.", size, _path);
+  panic_if(fread(buf.data, size_t(size), 1, file) != 1, "Failed to read %ld bytes from file '%s'.", size, _path);
 
   return buf;
 }
