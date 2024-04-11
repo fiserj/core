@@ -147,6 +147,16 @@ UTEST(utils, align_up) {
   ASSERT_EQ(align_up(16, 128), 128);
 }
 
+UTEST(utils, gtr_or) {
+  const i32 thr = 1;
+  const i32 def = 2;
+
+  ASSERT_EQ(gtr_or(0, thr, def), def);
+  ASSERT_EQ(gtr_or(1, thr, def), def);
+  ASSERT_EQ(gtr_or(2, thr, def), 2);
+  ASSERT_EQ(gtr_or(3, thr, def), 3);
+}
+
 UTEST(utils, pack_as_u16) {
   ASSERT_EQ(pack_as_u16(0.0f, 65535.0f, 0.0f), u16(0));
   ASSERT_EQ(pack_as_u16(0.5f, 65535.0f, 0.0f), u16(32768));

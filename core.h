@@ -309,6 +309,19 @@ constexpr T* align_up(T* _ptr, A _align) {
   return conv.ptr;
 }
 
+/// Returns the input value if it is greater than the threshold, otherwise the
+/// default value.
+///
+/// @param[in] _x         Value to check.
+/// @param[in] _threshold Threshold.
+/// @param[in] _default   Default value.
+///
+/// @return `_x` if it is greater than the `_threshold`, otherwise `_default`.
+template <typename T>
+constexpr T gtr_or(T _x, T _threshold, T _default) {
+  return _x > _threshold ? _x : _default;
+}
+
 /// Packs a floating-point number into a 16-bit unsigned integer.
 ///
 /// @param[in] _x     Floating-point number to pack.
