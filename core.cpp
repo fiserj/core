@@ -314,6 +314,14 @@ SlabArena make_slab_arena() {
   return make_slab_arena(ctx_alloc());
 }
 
+void destroy(SlabArena& _arena) {
+  for (auto slab : _arena.slabs) {
+    free(*_arena.slabs.alloc, slab.data, slab.len);
+  }
+
+  destroy(_arena.slabs);
+}
+
 Allocator make_alloc(SlabArena& _arena) {
   return {
     .ctx   = &_arena,
@@ -362,19 +370,11 @@ Allocator make_alloc(SlabArena& _arena) {
   };
 }
 
-void destroy(SlabArena& _arena) {
-  for (auto slab : _arena.slabs) {
-    free(*_arena.slabs.alloc, slab.data, slab.len);
-  }
-
-  destroy(_arena.slabs);
-}
-
 // -----------------------------------------------------------------------------
 // FILE I/O
 // -----------------------------------------------------------------------------
 
-Slice<u8, Dynamic> read_bytes(const char* _path, Allocator& _alloc) {
+DynSlice<u8> read_bytes(const char* _path, Allocator& _alloc) {
 #if defined(_MSC_VER)
   // We could use _CRT_SECURE_NO_WARNINGS but would have to put it in the header
   // file because some of the headers included there transitively pull in stdio.
@@ -399,11 +399,11 @@ Slice<u8, Dynamic> read_bytes(const char* _path, Allocator& _alloc) {
   return buf;
 }
 
-Slice<u8, Dynamic> read_bytes(const char* _path) {
+DynSlice<u8> read_bytes(const char* _path) {
   return read_bytes(_path, ctx_alloc());
 }
 
-Slice<char, Dynamic> read_string(const char* _path, Allocator& _alloc) {
+DynSlice<char> read_string(const char* _path, Allocator& _alloc) {
   static_assert(sizeof(char) == sizeof(u8));
 
   auto bytes = read_bytes(_path, _alloc);
@@ -411,6 +411,6 @@ Slice<char, Dynamic> read_string(const char* _path, Allocator& _alloc) {
   return {{(char*)bytes.data, bytes.len}, bytes.cap, bytes.alloc};
 }
 
-Slice<char, Dynamic> read_string(const char* _path) {
+DynSlice<char> read_string(const char* _path) {
   return read_string(_path, ctx_alloc());
 }

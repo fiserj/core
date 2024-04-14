@@ -1134,10 +1134,10 @@ UTEST(Transform2, rotate_ccw) {
   ASSERT_NEAR(c.y, 2.0f, 1e-6f);
 }
 
-UTEST(Transform2, map_rect_to_rect) {
+UTEST(Transform2, remap_rects) {
   const Rect s = {{-1.0f, -2.0f}, {3.0f, 4.0f}};
   const Rect d = {{+1.0f, +0.0f}, {8.0f, 1.0f}};
-  const auto M = map_rect_to_rect(s, d);
+  const auto M = remap_rects(s, d);
 
   ASSERT_NEAR((M * tl(s)).x, tl(d).x, 1e-6f);
   ASSERT_NEAR((M * tl(s)).y, tl(d).y, 1e-6f);
