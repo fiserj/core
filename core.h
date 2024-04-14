@@ -150,7 +150,7 @@ void log(const char* _kind, detail::Fmt _fmt, ...);
 [[noreturn]] void panic(detail::Fmt _fmt, ...);
 
 // -----------------------------------------------------------------------------
-// SIZED TYPES ALIASES
+// SIZED TYPES
 // -----------------------------------------------------------------------------
 
 using Index = ptrdiff_t;
@@ -569,12 +569,12 @@ struct Slice {
   Size len;  // Number of elements.
 
   // Checks if the slice is not empty.
-  operator bool() const {
+  constexpr operator bool() const {
     return data != nullptr;
   }
 
   // Converts the slice to a slice of constant elements.
-  operator Slice<Const<T>>() const {
+  constexpr operator Slice<Const<T>>() const {
     return {
       .data = data,
       .len  = len,
@@ -616,7 +616,7 @@ struct Slice {
 
 // Makes a non-owning slice, wrapping a statically-sized array.
 template <typename T, Size N>
-Slice<T> make_slice(T (&_array)[N]) {
+constexpr Slice<T> make_slice(T (&_array)[N]) {
   Slice<T> slice;
   slice.data = _array;
   slice.len  = N;
@@ -627,7 +627,7 @@ Slice<T> make_slice(T (&_array)[N]) {
 // Makes a non-owning slice, wrapping a pointer to the first element and the
 // associated number of elements.
 template <typename T>
-Slice<T> make_slice(T* _data, Size _len) {
+constexpr Slice<T> make_slice(T* _data, Size _len) {
   Slice<T> slice;
   slice.data = _data;
   slice.len  = _len;
@@ -637,7 +637,7 @@ Slice<T> make_slice(T* _data, Size _len) {
 
 // Explicitly deleted slice construction from a null pointer literal.
 template <typename T>
-Slice<T> make_slice(decltype(nullptr), Size) = delete;
+constexpr Slice<T> make_slice(decltype(nullptr), Size) = delete;
 
 // Copies elements from `_src` slice to `_dst` slice. Copies the minimum of the
 // two slice lengths.
@@ -648,7 +648,7 @@ void copy(const Slice<T>& _dst, const Slice<Const<T>>& _src) {
 
 // Returns `true` if the slice is empty, `false` otherwise.
 template <typename T>
-bool empty(const Slice<T>& _slice) {
+constexpr bool empty(const Slice<T>& _slice) {
   debug_assert(_slice.len >= 0);
   return _slice.len == 0;
 }
@@ -914,7 +914,7 @@ T& pop(Ring<T>& _ring) {
 
 // Returns `true` if the ring buffer is empty, `false` otherwise.
 template <typename T>
-bool empty(const Ring<T>& _ring) {
+constexpr bool empty(const Ring<T>& _ring) {
   return _ring.head == _ring.tail;
 }
 
@@ -1022,10 +1022,10 @@ constexpr f32 dot(Vec2 _u, Vec2 _v) {
 // 1D RANGE
 // -----------------------------------------------------------------------------
 
-// 1D range of single-precision floating-point numbers.
+// 1D range of single-precision floating-point numbers. The range is inclusive.
 struct Range {
-  f32 min;
-  f32 max;
+  f32 min; // Lower bound.
+  f32 max; // Upper bound.
 };
 
 // Checks if two ranges overlap. Assumes that each range's minimum is less than
@@ -1064,8 +1064,8 @@ constexpr Range min_max(f32 _a, f32 _b, f32 _c, f32 _d) {
 
 // 2D rectangle of single-precision floating-point numbers.
 struct Rect {
-  Vec2 min;
-  Vec2 max;
+  Vec2 min; // Bottom-left corner.
+  Vec2 max; // Top-right corner.
 };
 
 // Returns size of the rectangle.
@@ -1139,12 +1139,12 @@ constexpr bool overlap(const Rect& _a, const Rect& _b) {
 // `| b d f |`
 // `| 0 0 1 |`
 struct Transform2 {
-  f32 a;
-  f32 b;
-  f32 c;
-  f32 d;
-  f32 e;
-  f32 f;
+  f32 a; // Element at row 1, column 1.
+  f32 b; // Element at row 2, column 1.
+  f32 c; // Element at row 1, column 2.
+  f32 d; // Element at row 2, column 2.
+  f32 e; // Element at row 1, column 3.
+  f32 f; // Element at row 2, column 3.
 };
 
 // Multiplies two transformation matrices.
