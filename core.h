@@ -31,19 +31,27 @@
 // CONFIG
 // -----------------------------------------------------------------------------
 
+// If not specified, the debug mode is enabled in debug builds (when `NDEBUG`
+// symbol is not defined) and disabled otherwise.
 #if !defined(CORE_CONFIG_DEBUG_MODE)
 #  if defined(NDEBUG)
+// Debug mode is off.
 #    define CORE_CONFIG_DEBUG_MODE 0
 #  else
+// Debug mode is on.
 #    define CORE_CONFIG_DEBUG_MODE 1
 #  endif
 #endif
 
+// If not specified, bounds checking is always enabled.
 #if !defined(CORE_CONFIG_NO_BOUNDS_CHECK)
+// Bounds checking is on.
 #  define CORE_CONFIG_NO_BOUNDS_CHECK 0
 #endif
 
+// If not specified, exceptions are not thrown on panic, the program aborts.
 #if !defined(CORE_CONFIG_THROW_EXCEPTION_ON_PANIC)
+// Exceptions are not thrown on panic, the program aborts.
 #  define CORE_CONFIG_THROW_EXCEPTION_ON_PANIC 0
 #endif
 
@@ -51,7 +59,9 @@
 // DEBUGGING
 // -----------------------------------------------------------------------------
 
+// Checks a debug-mode-only condition.
 #if (CORE_CONFIG_DEBUG_MODE)
+// If the condition is false, logs a message and breaks into the debugger.
 #  define debug_assert(_cond)    \
     do {                         \
       if (!(_cond)) {            \
@@ -60,25 +70,39 @@
       }                          \
     } while (0)
 #else
+// This conditions is not checked in the current build.
 #  define debug_assert(_cond) ((void)0)
 #endif
 
+// Logs a warning message.
 #define warn(...) \
   ::log("warn", __VA_ARGS__)
 
+// Logs a warning message if the condition is true.
 #define warn_if(_cond, ...) \
   do {                      \
     if (_cond)              \
       warn(__VA_ARGS__);    \
   } while (0)
 
+// If the condition is true, logs a message and panics.
 #define panic_if(_cond, ...) \
   do {                       \
     if (_cond)               \
       ::panic(__VA_ARGS__);  \
   } while (0)
 
-// Breaks into the debugger.
+// Bounds checking.
+#if (CORE_CONFIG_NO_BOUNDS_CHECK)
+// Bounds checking is off.
+#  define check_bounds(_cond) ((void)0)
+#else
+// Bounds checking is on.
+#  define check_bounds(_cond) \
+    panic_if(!(_cond), "Bounds check failure: %s", #_cond)
+#endif
+
+// Unconditionally breaks into the debugger.
 inline void debug_break() {
 #if (_MSC_VER)
   __debugbreak();
@@ -91,14 +115,8 @@ inline void debug_break() {
 #endif
 }
 
-#if (CORE_CONFIG_NO_BOUNDS_CHECK)
-#  define check_bounds(_cond) ((void)0)
-#else
-#  define check_bounds(_cond) \
-    panic_if(!(_cond), "Bounds check failure: %s", #_cond)
-#endif
-
-// Basic exception information.
+// Basic exception information. Thrown on panic if the library is built with
+// `CORE_CONFIG_THROW_EXCEPTION_ON_PANIC` set to a non-zero value.
 struct Exception {
   const char* file;
   int         line;
@@ -107,23 +125,28 @@ struct Exception {
 
 namespace detail {
 
-// Helper struct for retaining the debugging information.
+// Helper struct for retaining the debugging information. Can be passed a string
+// literal and it automatically captures the file and line number, without using
+// macros.
 struct Fmt {
   const char* fmt;
   const char* file;
   int         line;
 
+  // Constructs the format instance, automatically capturing the file and line
+  // number. The required built-ins are supported across the board in the major
+  // recent-ish compilers (written as of 2024).
   constexpr Fmt(const char* _fmt, const char* _file = __builtin_FILE(), int _line = __builtin_LINE())
     : fmt(_fmt), file(_file), line(_line) {}
 };
 
 } // namespace detail
 
-// Logs a message with the specified kind.
+// Logs a generic message.
 void log(const char* _kind, detail::Fmt _fmt, ...);
 
-// Prints the message and panics, i.e., aborts, unless compiled with
-// `CORE_CONFIG_THROW_EXCEPTION_ON_PANIC`.
+// Unconditionally prints the message and panics, i.e., aborts, unless compiled
+// with `CORE_CONFIG_THROW_EXCEPTION_ON_PANIC`.
 [[noreturn]] void panic(detail::Fmt _fmt, ...);
 
 // -----------------------------------------------------------------------------
@@ -441,15 +464,22 @@ struct Allocator {
   void* (*alloc)(AnyPtr& _ctx, void* _ptr, Size _old, Size _new, Size _align, u8 _flags);
 };
 
-// Returns allocator interface that uses stdlib's memory management routines.
+// Returns allocator interface that uses stdlib's heap allocation routines.
+// Intended for generic use.
 Allocator std_alloc();
 
+// Returns a thread-local reference to current context's allocator. By default,
+// this is the stdlib heap allocator.
 Allocator& ctx_alloc();
 
+// Returns a thread-local reference to current context's temporary allocator.
+// A temporary allocator is used for short-lived allocations, which are freed
+// once per "cycle" (e.g., per frame).
 Allocator& ctx_temp_alloc();
 
 namespace detail {
 
+// Helper struct managing the scoped "allocator push/pop" logic.
 struct ScopedAllocator : NonCopyable {
   Allocator prev;
 
@@ -827,7 +857,8 @@ SlabArena make_slab_arena();
 // Destroys the slab arena and frees the memory it owns.
 void destroy(SlabArena& _arena);
 
-// Makes an allocator interface using the provided slab arena.
+// Makes an allocator interface using the provided slab arena. The arena must
+// outlive the allocator.
 Allocator make_alloc(SlabArena& _arena);
 
 // -----------------------------------------------------------------------------
