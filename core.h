@@ -61,7 +61,7 @@
 
 // Checks a debug-mode-only condition.
 #if (CORE_CONFIG_DEBUG_MODE)
-// If the condition is false, logs a message and breaks into the debugger.
+// If the condition is `false`, logs a message and breaks into the debugger.
 #  define debug_assert(_cond)    \
     do {                         \
       if (!(_cond)) {            \
@@ -150,7 +150,7 @@ void log(const char* _kind, detail::Fmt _fmt, ...);
 [[noreturn]] void panic(detail::Fmt _fmt, ...);
 
 // -----------------------------------------------------------------------------
-// SIZED TYPES' ALIASES
+// SIZED TYPES ALIASES
 // -----------------------------------------------------------------------------
 
 using Index = ptrdiff_t;
@@ -188,6 +188,19 @@ constexpr OmittedTag _;
 // -----------------------------------------------------------------------------
 
 namespace detail {
+
+// Provides member typedef type, which is defined as `TrueType` if the condition
+// is `true` at compile time, or as `FalseType` if the condition is `false`.
+template <bool Condition, typename TrueType, typename FalseType>
+struct Conditional {
+  using Type = TrueType;
+};
+
+// Specialization for the case when the condition evaluates as `false`.
+template <class TrueType, typename FalseType>
+struct Conditional<false, TrueType, FalseType> {
+  using Type = FalseType;
+};
 
 // Helper struct for removing the constant qualifier from a type.
 template <typename T>
