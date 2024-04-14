@@ -548,7 +548,7 @@ namespace detail {
 
 // Helper type to facilitate indexing from the back of a slice.
 struct BackIndex {
-  Index val;
+  Index val; // Offset from the end of the slice.
 };
 
 } // namespace detail
@@ -830,24 +830,25 @@ void remove_unordered(Array<T>& _slice, Index _i) {
 
 // Simple fixed-size arena that allocates memory from a single non-owned buffer.
 struct Arena {
-  Slice<u8> buf;
-  Index     head;
+  Slice<u8> buf;  // Non-owned backing memory.
+  Index     head; // Offset to the next free byte.
 };
 
 // Creates an arena using the provided buffer.
 Arena make_arena(Slice<u8> _buf);
 
-// Makes an allocator interface using the provided arena.
+// Makes an allocator interface using the provided arena. The arena must live at
+// least as long as the allocator.
 Allocator make_alloc(Arena& _arena);
 
 // -----------------------------------------------------------------------------
 // SLAB ARENA (GROWABLE)
 // -----------------------------------------------------------------------------
 
-// Simple growable arena that allocates memory in fixed-size owned slabs.
+// Simple growable arena that allocates memory in fixed-sized, owned slabs.
 struct SlabArena {
-  Array<Slice<u8>> slabs;
-  Index            head;
+  Array<Slice<u8>> slabs; // Owned slabs. The first slab is always allocated.
+  Index            head;  // Index of the active slab.
 };
 
 // Creates a slab arena using the provided allocator and slab size.
@@ -863,20 +864,21 @@ SlabArena make_slab_arena();
 // Destroys the slab arena and frees the memory it owns.
 void destroy(SlabArena& _arena);
 
-// Makes an allocator interface using the provided slab arena. The arena must
-// outlive the allocator.
+// Makes an allocator interface using the provided slab arena.  The arena must
+// live at least as long as the allocator.
 Allocator make_alloc(SlabArena& _arena);
 
 // -----------------------------------------------------------------------------
 // RING BUFFER
 // -----------------------------------------------------------------------------
 
-// Simple ring buffer that stores elements of type `T`.
+// Simple fixed-size ring buffer that allocates memory from a single non-owned
+// backing buffer.
 template <typename T>
 struct Ring {
-  Slice<T> buf;
-  Index    head;
-  Index    tail;
+  Slice<T> buf;  // Non-owned backing memory.
+  Index    head; // Index of the next element to be added.
+  Index    tail; // Index of the oldest element (next one to be removed).
 };
 
 // Creates a ring buffer using the backing memory.
@@ -944,8 +946,8 @@ Array<char> read_string(const char* _path);
 
 // 2D vector of single-precision floating-point numbers.
 struct Vec2 {
-  f32 x;
-  f32 y;
+  f32 x; // X component.
+  f32 y; // Y component.
 };
 
 // Negates (flips) a vector.
