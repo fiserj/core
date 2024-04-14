@@ -244,9 +244,9 @@ Allocator& ctx_temp_alloc() {
 // SIMPLE ARENA
 // -----------------------------------------------------------------------------
 
-Arena make_arena(ISlice<u8> _buf) {
+Arena make_arena(Slice<u8> _buf) {
   return {
-    .buf  = {{_buf.data, _buf.len}},
+    .buf  = {_buf.data, _buf.len},
     .head = 0,
   };
 }
@@ -296,7 +296,7 @@ Allocator make_alloc(Arena& _arena) {
 
 SlabArena make_slab_arena(Allocator& _alloc, Size _slab_size) {
   SlabArena arena = {
-    .slabs = make_slice<Slice<u8>>(0, 8, _alloc),
+    .slabs = make_array<Slice<u8>>(0, 8, _alloc),
     .head  = 0,
   };
 
@@ -393,7 +393,7 @@ Array<u8> read_bytes(const char* _path, Allocator& _alloc) {
   const long size = ftell(file);
   fseek(file, 0, SEEK_SET);
 
-  auto buf = make_slice<u8>(size, size + 1, _alloc);
+  auto buf = make_array<u8>(size, size + 1, _alloc);
   panic_if(fread(buf.data, size_t(size), 1, file) != 1, "Failed to read %ld bytes from file '%s'.", size, _path);
 
   return buf;

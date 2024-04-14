@@ -562,9 +562,9 @@ constexpr detail::BackIndex operator-(detail::BackIndex _i, Index _j) {
   return {_i.val - _j};
 }
 
-// Interface for a non-owning memory slice.
+// Non-owning memory slice.
 template <typename T>
-struct ISlice {
+struct Slice {
   T*   data; // Pointer to the first element.
   Size len;  // Number of elements.
 
@@ -574,7 +574,7 @@ struct ISlice {
   }
 
   // Converts the slice to a slice of constant elements.
-  operator ISlice<Const<T>>() const {
+  operator Slice<Const<T>>() const {
     return {
       .data = data,
       .len  = len,
@@ -593,7 +593,7 @@ struct ISlice {
   }
 
   // Returns a subslice of the slice. `_low` is inclusive, `_high` is exclusive.
-  ISlice<T> operator()(Index _low, Index _high) const {
+  Slice<T> operator()(Index _low, Index _high) const {
     check_bounds(_low >= 0);
     check_bounds(_low <= _high);
     check_bounds(_high <= len);
@@ -604,81 +604,15 @@ struct ISlice {
   }
 
   // Returns a subslice of the slice. `_low` is implicitly 0.
-  ISlice<T> operator()(OmittedTag, Index _high) const {
+  Slice<T> operator()(OmittedTag, Index _high) const {
     return operator()(0, _high);
   }
 
   // Returns a subslice of the slice. `_high` is implicitly `len`.
-  ISlice<T> operator()(Index _low, OmittedTag) const {
+  Slice<T> operator()(Index _low, OmittedTag) const {
     return operator()(_low, len);
   }
 };
-
-namespace detail {
-
-// Helper function to calculate the next capacity for a dynamic slice.
-constexpr Size next_cap(Size _cap, Size _req) {
-  return max(max(Size(8), _req), (_cap * 3) / 2);
-}
-
-} // namespace detail
-
-// Symbolic constant that indicates that a slice is dynamic.
-constexpr bool Dynamic = true;
-
-// Slice of elements of type `T`. Does not own the memory it points to.
-template <typename T, bool IsDynamic = false>
-struct Slice : ISlice<T> {};
-
-// Dynamic slice of elements of type `T`. Owns the memory it points to.
-template <typename T>
-struct Slice<T, Dynamic> : ISlice<T> {
-  Size       cap;
-  Allocator* alloc;
-};
-
-// Alias for a dynamic slice of elements of type `T`.
-template <typename T>
-using Array = Slice<T, Dynamic>;
-
-// Makes a dynamic slice of specified length and capacity, using the provided
-// allocator.
-template <typename T>
-Array<T> make_slice(Size _len, Size _cap, Allocator& _alloc) {
-  debug_assert(_len >= 0 && _len <= _cap);
-  debug_assert(_alloc.alloc);
-
-  // TODO : Can we make this work with designated initializers?
-  return {
-    {(T*)allocate(_alloc, _cap * sizeof(T), alignof(T)),
-     _len},
-    _cap,
-    &_alloc,
-  };
-}
-
-// Makes a dynamic slice of specified length and capacity, using the current
-// context's allocator.
-template <typename T, typename S>
-Array<T> make_slice(S _len, Size _cap) {
-  static_assert(is_same<S, Size> || is_same<S, decltype(0)>);
-
-  return make_slice<T>(Size(_len), _cap, ctx_alloc());
-}
-
-// Makes a dynamic slice of specified length, using the current context's
-// allocator. Capacity is set equal to the length.
-template <typename T>
-Array<T> make_slice(Size _len) {
-  return make_slice<T>(_len, _len);
-}
-
-// Makes a dynamic slice of specified length, using the provided allocator.
-// Capacity is set equal to the length.
-template <typename T>
-Array<T> make_slice(Size _len, Allocator& _alloc) {
-  return make_slice<T>(_len, _len, _alloc);
-}
 
 // Makes a non-owning slice, wrapping a statically-sized array.
 template <typename T, Size N>
@@ -701,17 +635,108 @@ Slice<T> make_slice(T* _data, Size _len) {
   return slice;
 }
 
-// Explicitly deleted slice construction from a null pointer.
+// Explicitly deleted slice construction from a null pointer literal.
 template <typename T>
 Slice<T> make_slice(decltype(nullptr), Size) = delete;
 
-// Destroys the dynamic slice and frees the memory it points to.
+// Copies elements from `_src` slice to `_dst` slice. Copies the minimum of the
+// two slice lengths.
+template <typename T>
+void copy(const Slice<T>& _dst, const Slice<Const<T>>& _src) {
+  memcpy(_dst.data, _src.data, size_t(min(_dst.len, _src.len)) * sizeof(T));
+}
+
+// Returns `true` if the slice is empty, `false` otherwise.
+template <typename T>
+bool empty(const Slice<T>& _slice) {
+  debug_assert(_slice.len >= 0);
+  return _slice.len == 0;
+}
+
+// Returns a pointer to the first element of the slice.
+template <typename T>
+constexpr T* begin(const Slice<T>& _slice) {
+  return _slice.data;
+}
+
+// Returns a pointer to the "one-past-the-end" element of the slice.
+template <typename T>
+constexpr T* end(const Slice<T>& _slice) {
+  return _slice.data + _slice.len;
+}
+
+// Returns the number of bytes used by the slice.
+template <typename T>
+constexpr size_t bytes(const Slice<T>& _slice) {
+  return size_t(_slice.len) * sizeof(T);
+}
+
+// -----------------------------------------------------------------------------
+// DYNAMIC ARRAY
+// -----------------------------------------------------------------------------
+
+namespace detail {
+
+// Helper function to calculate the next capacity for a dynamic slice.
+constexpr Size next_cap(Size _cap, Size _req) {
+  return max(max(Size(8), _req), (_cap * 3) / 2);
+}
+
+} // namespace detail
+// Dynamic (growable) array of elements of type `T`. Owns the memory it points
+// to. Retains a pointer to the allocator that was used to allocate its memory.
+template <typename T>
+struct Array : Slice<T> {
+  Size       cap;
+  Allocator* alloc;
+};
+
+// Makes a dynamic array of specified length and capacity, using the provided
+// allocator.
+template <typename T>
+Array<T> make_array(Size _len, Size _cap, Allocator& _alloc) {
+  debug_assert(_len >= 0 && _len <= _cap);
+  debug_assert(_alloc.alloc);
+
+  // TODO : Can we make this work with designated initializers?
+  return {
+    {(T*)allocate(_alloc, _cap * sizeof(T), alignof(T)),
+     _len},
+    _cap,
+    &_alloc,
+  };
+}
+
+// Makes a dynamic array of specified length and capacity, using the current
+// context's allocator.
+template <typename T, typename S>
+Array<T> make_array(S _len, Size _cap) {
+  static_assert(is_same<S, Size> || is_same<S, decltype(0)>);
+
+  return make_array<T>(Size(_len), _cap, ctx_alloc());
+}
+
+// Makes a dynamic array of specified length, using the current context's
+// allocator. Capacity is set equal to the length.
+template <typename T>
+Array<T> make_array(Size _len) {
+  return make_array<T>(_len, _len);
+}
+
+// Makes a dynamic array of specified length, using the provided allocator.
+// Capacity is set equal to the length.
+template <typename T>
+Array<T> make_array(Size _len, Allocator& _alloc) {
+  return make_array<T>(_len, _len, _alloc);
+}
+
+// Destroys the dynamic array and frees the memory it points to.
 template <typename T>
 void destroy(Array<T>& _slice) {
   free(*_slice.alloc, _slice.data, _slice.cap * sizeof(T));
 }
 
-// Ensures that the slice has enough capacity to store at least `_cap` elements.
+// Ensures that the array has enough capacity to store at least `_cap` elements.
 template <typename T>
 void reserve(Array<T>& _slice, Size _cap) {
   if (_cap <= _slice.cap) {
@@ -742,13 +767,6 @@ void resize(Array<T>& _slice, Size _len) {
   _slice.len = _len;
 }
 
-// Copies elements from `_src` slice to `_dst` slice. Copies the minimum of the
-// two slice lengths.
-template <typename T>
-void copy(const ISlice<T>& _dst, const ISlice<Const<T>>& _src) {
-  memcpy(_dst.data, _src.data, size_t(min(_dst.len, _src.len)) * sizeof(T));
-}
-
 // Appends a single value to the dynamic slice.
 template <typename T>
 void append(Array<T>& _slice, const T& _value) {
@@ -761,7 +779,7 @@ void append(Array<T>& _slice, const T& _value) {
 
 // Appends multiple values to the dynamic slice.
 template <typename T>
-void append(Array<T>& _slice, const ISlice<Const<T>>& _values) {
+void append(Array<T>& _slice, const Slice<Const<T>>& _values) {
   const Size low  = _slice.len;
   const Size high = _slice.len + _values.len;
 
@@ -806,31 +824,6 @@ void remove_unordered(Array<T>& _slice, Index _i) {
   _slice.len--;
 }
 
-// Returns `true` if the slice is empty, `false` otherwise.
-template <typename T>
-bool empty(const ISlice<T>& _slice) {
-  debug_assert(_slice.len >= 0);
-  return _slice.len == 0;
-}
-
-// Returns a pointer to the first element of the slice.
-template <typename T>
-constexpr T* begin(const ISlice<T>& _slice) {
-  return _slice.data;
-}
-
-// Returns a pointer to the "one-past-the-end" element of the slice.
-template <typename T>
-constexpr T* end(const ISlice<T>& _slice) {
-  return _slice.data + _slice.len;
-}
-
-// Returns the number of bytes used by the slice.
-template <typename T>
-constexpr size_t bytes(const ISlice<T>& _slice) {
-  return size_t(_slice.len) * sizeof(T);
-}
-
 // -----------------------------------------------------------------------------
 // SIMPLE ARENA (NON-OWNING)
 // -----------------------------------------------------------------------------
@@ -842,7 +835,7 @@ struct Arena {
 };
 
 // Creates an arena using the provided buffer.
-Arena make_arena(ISlice<u8> _buf);
+Arena make_arena(Slice<u8> _buf);
 
 // Makes an allocator interface using the provided arena.
 Allocator make_alloc(Arena& _arena);
@@ -854,7 +847,7 @@ Allocator make_alloc(Arena& _arena);
 // Simple growable arena that allocates memory in fixed-size owned slabs.
 struct SlabArena {
   Array<Slice<u8>> slabs;
-  Index               head;
+  Index            head;
 };
 
 // Creates a slab arena using the provided allocator and slab size.
@@ -888,15 +881,14 @@ struct Ring {
 
 // Creates a ring buffer using the backing memory.
 template <typename T>
-Ring<T> make_ring(ISlice<T> _buf) {
+Ring<T> make_ring(Slice<T> _buf) {
   debug_assert(_buf.len > 1);
 
-  Ring<T> ring;
-  ring.buf  = {{_buf.data, _buf.len}};
-  ring.head = 0;
-  ring.tail = 0;
-
-  return ring;
+  return {
+    .buf  = {_buf.data, _buf.len},
+    .head = 0,
+    .tail = 0,
+  };
 }
 
 // Adds a new element to the ring buffer.

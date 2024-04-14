@@ -344,12 +344,12 @@ UTEST(slab_arena_alloc, grow) {
 UTEST(Slice, truthiness) {
   int array[3] = {1, 2, 3};
 
-  const ISlice<int> valid = {
+  const Slice<int> valid = {
     .data = array,
     .len  = sizeof(array) / sizeof(array[0]),
   };
 
-  const ISlice<int> empty = {};
+  const Slice<int> empty = {};
 
   ASSERT_TRUE(valid);
   ASSERT_FALSE(empty);
@@ -358,7 +358,7 @@ UTEST(Slice, truthiness) {
 UTEST(Slice, element_access) {
   int array[3] = {1, 2, 3};
 
-  const ISlice<int> slice = {
+  const Slice<int> slice = {
     .data = array,
     .len  = sizeof(array) / sizeof(array[0]),
   };
@@ -374,7 +374,7 @@ UTEST(Slice, element_access) {
 UTEST(Slice, back_element_access) {
   int array[3] = {1, 2, 3};
 
-  const ISlice<int> slice = {
+  const Slice<int> slice = {
     .data = array,
     .len  = sizeof(array) / sizeof(array[0]),
   };
@@ -393,7 +393,7 @@ UTEST(Slice, subslicing) {
   //
   // On some GCC versions, `#pragma GCC diagnostic ignored "-Warray-bounds"`
   // is still ignored, so instead, we point the slice's start to `ZERO_MEM + 1`.
-  const ISlice<const u8> slice = {
+  const Slice<const u8> slice = {
     .data = ZERO_MEM + 1,
     .len  = 3,
   };
@@ -425,88 +425,14 @@ UTEST(Slice, make_slice_array) {
   ASSERT_EQ(slice.len, 3);
 }
 
-UTEST(Slice, make_slice_len) {
-  auto slice = make_slice<int>(3);
-  defer(destroy(slice));
-
-  ASSERT_NE(slice.data, (int*)nullptr);
-  ASSERT_EQ(slice.len, 3);
-  ASSERT_LE(slice.len, slice.cap);
-}
-
-UTEST(Slice, make_slice_len_cap) {
-  auto slice = make_slice<int>(1, 3);
-  defer(destroy(slice));
-
-  ASSERT_NE(slice.data, (int*)nullptr);
-  ASSERT_EQ(slice.len, 1);
-  ASSERT_EQ(slice.cap, 3);
-}
-
-UTEST(Slice, reserve) {
-  auto slice = make_slice<int>(1, 2);
-  defer(destroy(slice));
-
-  slice[0] = 10;
-
-  ASSERT_EQ(slice.cap, 2);
-  ASSERT_EQ(slice.len, 1);
-  ASSERT_EQ(slice[0], 10);
-
-  reserve(slice, 6);
-  ASSERT_GE(slice.cap, 6);
-  ASSERT_EQ(slice.len, 1);
-  ASSERT_EQ(slice[0], 10);
-
-  reserve(slice, 25);
-  ASSERT_GE(slice.cap, 25);
-  ASSERT_EQ(slice.len, 1);
-  ASSERT_EQ(slice[0], 10);
-}
-
-UTEST(Slice, resize) {
-  const int values[10] = {0, 1, 2};
-
-  auto slice = make_slice<int>(1);
-  defer(destroy(slice));
-
-  ASSERT_EQ(slice.len, 1);
-  ASSERT_LE(slice.len, slice.cap);
-  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 1 * sizeof(int)), 0);
-
-  resize(slice, 3);
-  ASSERT_EQ(slice.len, 3);
-  ASSERT_LE(slice.len, slice.cap);
-  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 3 * sizeof(int)), 0);
-
-  slice[1] = 1;
-  slice[2] = 2;
-  ASSERT_EQ(memcmp(slice.data, values, 3 * sizeof(int)), 0);
-
-  resize(slice, 10);
-  ASSERT_EQ(slice.len, 10);
-  ASSERT_LE(slice.len, slice.cap);
-  ASSERT_EQ(memcmp(slice.data, values, 10 * sizeof(int)), 0);
-
-  resize(slice, 1);
-  ASSERT_EQ(slice.len, 1);
-  ASSERT_LE(slice.len, slice.cap);
-  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 1 * sizeof(int)), 0);
-
-  resize(slice, 3);
-  ASSERT_EQ(slice.len, 3);
-  ASSERT_LE(slice.len, slice.cap);
-  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 3 * sizeof(int)), 0);
-}
-
 UTEST(Slice, copy) {
-  auto src = make_slice<int>(3);
+  auto src = make_array<int>(3);
   defer(destroy(src));
   src[0] = 1;
   src[1] = 2;
   src[2] = 3;
 
-  auto dst = make_slice<int>(3);
+  auto dst = make_array<int>(3);
   defer(destroy(dst));
   copy(dst, src);
   ASSERT_EQ(memcmp(src.data, dst.data, 3 * sizeof(int)), 0);
@@ -518,94 +444,6 @@ UTEST(Slice, copy) {
   int small = 0;
   copy(make_slice(&small, 1), src);
   ASSERT_EQ(small, src[0]);
-}
-
-UTEST(Slice, append_value) {
-  const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-
-  auto slice = make_slice<int>(0, 1);
-  defer(destroy(slice));
-
-  for (int i = 0; i < 10; i++) {
-    append(slice, values[i]);
-    ASSERT_EQ(slice.len, i + 1);
-    ASSERT_LE(slice.len, slice.cap);
-    ASSERT_EQ(memcmp(slice.data, values, i * sizeof(int)), 0);
-  }
-}
-
-UTEST(Slice, append_values) {
-  const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-
-  auto slice = make_slice<int>(1);
-  defer(destroy(slice));
-
-  append(slice, make_slice(values + 1, 9));
-  ASSERT_EQ(memcmp(slice.data, values, sizeof(values)), 0);
-}
-
-UTEST(Slice, pop) {
-  auto slice = make_slice<int>(10);
-  defer(destroy(slice));
-
-  const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-  copy(slice, make_slice(values));
-
-  for (int i = 9; i >= 0; i--) {
-    ASSERT_EQ(pop(slice), values[i]);
-    ASSERT_EQ(slice.len, i);
-    ASSERT_LE(slice.len, slice.cap);
-  }
-
-  EXPECT_EXCEPTION(pop(slice), Exception);
-}
-
-UTEST(Slice, remove_ordered) {
-  auto slice = make_slice<int>(5);
-  defer(destroy(slice));
-
-  const int values[5] = {0, 1, 2, 3, 4};
-  copy(slice, make_slice(values));
-
-  remove_ordered(slice, 4);
-  ASSERT_EQ(slice.len, 4);
-  ASSERT_EQ(slice[0], 0);
-  ASSERT_EQ(slice[1], 1);
-  ASSERT_EQ(slice[2], 2);
-  ASSERT_EQ(slice[3], 3);
-
-  remove_ordered(slice, 1);
-  ASSERT_EQ(slice.len, 3);
-  ASSERT_EQ(slice[0], 0);
-  ASSERT_EQ(slice[1], 2);
-  ASSERT_EQ(slice[2], 3);
-
-  EXPECT_EXCEPTION(remove_ordered(slice, 3), Exception);
-  EXPECT_EXCEPTION(remove_ordered(slice, -1), Exception);
-}
-
-UTEST(Slice, remove_unordered) {
-  auto slice = make_slice<int>(5);
-  defer(destroy(slice));
-
-  const int values[5] = {0, 1, 2, 3, 4};
-  copy(slice, make_slice(values));
-
-  remove_ordered(slice, 4);
-  ASSERT_EQ(slice.len, 4);
-  ASSERT_EQ(slice[0], 0);
-  ASSERT_EQ(slice[1], 1);
-  ASSERT_EQ(slice[2], 2);
-  ASSERT_EQ(slice[3], 3);
-
-  remove_ordered(slice, 1);
-  ASSERT_EQ(slice.len, 3);
-  ASSERT_EQ(slice[0], 0);
-  ASSERT_EQ(slice[1], 2);
-  ASSERT_EQ(slice[2], 3);
-
-  EXPECT_EXCEPTION(remove_ordered(slice, 3), Exception);
-  EXPECT_EXCEPTION(remove_ordered(slice, -1), Exception);
 }
 
 UTEST(Slice, begin_end) {
@@ -624,7 +462,7 @@ UTEST(Slice, range_based_for) {
   const int ones[3] = {1, 1, 1};
   const int twos[3] = {2, 2, 2};
 
-  auto dynamic = make_slice<int>(3);
+  auto dynamic = make_array<int>(3);
   defer(destroy(dynamic));
 
   for (int& value : dynamic) {
@@ -657,6 +495,172 @@ UTEST(Slice, bytes) {
 
   Slice<int> empty = {};
   ASSERT_EQ(bytes(empty), size_t(0));
+}
+
+// -----------------------------------------------------------------------------
+// DYNAMIC ARRAY
+// -----------------------------------------------------------------------------
+
+UTEST(Array, make_slice_len) {
+  auto slice = make_array<int>(3);
+  defer(destroy(slice));
+
+  ASSERT_NE(slice.data, (int*)nullptr);
+  ASSERT_EQ(slice.len, 3);
+  ASSERT_LE(slice.len, slice.cap);
+}
+
+UTEST(Array, make_slice_len_cap) {
+  auto slice = make_array<int>(1, 3);
+  defer(destroy(slice));
+
+  ASSERT_NE(slice.data, (int*)nullptr);
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_EQ(slice.cap, 3);
+}
+
+UTEST(Array, reserve) {
+  auto slice = make_array<int>(1, 2);
+  defer(destroy(slice));
+
+  slice[0] = 10;
+
+  ASSERT_EQ(slice.cap, 2);
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_EQ(slice[0], 10);
+
+  reserve(slice, 6);
+  ASSERT_GE(slice.cap, 6);
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_EQ(slice[0], 10);
+
+  reserve(slice, 25);
+  ASSERT_GE(slice.cap, 25);
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_EQ(slice[0], 10);
+}
+
+UTEST(Array, resize) {
+  const int values[10] = {0, 1, 2};
+
+  auto slice = make_array<int>(1);
+  defer(destroy(slice));
+
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_LE(slice.len, slice.cap);
+  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 1 * sizeof(int)), 0);
+
+  resize(slice, 3);
+  ASSERT_EQ(slice.len, 3);
+  ASSERT_LE(slice.len, slice.cap);
+  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 3 * sizeof(int)), 0);
+
+  slice[1] = 1;
+  slice[2] = 2;
+  ASSERT_EQ(memcmp(slice.data, values, 3 * sizeof(int)), 0);
+
+  resize(slice, 10);
+  ASSERT_EQ(slice.len, 10);
+  ASSERT_LE(slice.len, slice.cap);
+  ASSERT_EQ(memcmp(slice.data, values, 10 * sizeof(int)), 0);
+
+  resize(slice, 1);
+  ASSERT_EQ(slice.len, 1);
+  ASSERT_LE(slice.len, slice.cap);
+  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 1 * sizeof(int)), 0);
+
+  resize(slice, 3);
+  ASSERT_EQ(slice.len, 3);
+  ASSERT_LE(slice.len, slice.cap);
+  ASSERT_EQ(memcmp(slice.data, ZERO_MEM, 3 * sizeof(int)), 0);
+}
+
+UTEST(Array, append_value) {
+  const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+  auto slice = make_array<int>(0, 1);
+  defer(destroy(slice));
+
+  for (int i = 0; i < 10; i++) {
+    append(slice, values[i]);
+    ASSERT_EQ(slice.len, i + 1);
+    ASSERT_LE(slice.len, slice.cap);
+    ASSERT_EQ(memcmp(slice.data, values, i * sizeof(int)), 0);
+  }
+}
+
+UTEST(Array, append_values) {
+  const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+  auto slice = make_array<int>(1);
+  defer(destroy(slice));
+
+  append(slice, make_slice(values + 1, 9));
+  ASSERT_EQ(memcmp(slice.data, values, sizeof(values)), 0);
+}
+
+UTEST(Array, pop) {
+  auto slice = make_array<int>(10);
+  defer(destroy(slice));
+
+  const int values[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  copy(slice, make_slice(values));
+
+  for (int i = 9; i >= 0; i--) {
+    ASSERT_EQ(pop(slice), values[i]);
+    ASSERT_EQ(slice.len, i);
+    ASSERT_LE(slice.len, slice.cap);
+  }
+
+  EXPECT_EXCEPTION(pop(slice), Exception);
+}
+
+UTEST(Array, remove_ordered) {
+  auto slice = make_array<int>(5);
+  defer(destroy(slice));
+
+  const int values[5] = {0, 1, 2, 3, 4};
+  copy(slice, make_slice(values));
+
+  remove_ordered(slice, 4);
+  ASSERT_EQ(slice.len, 4);
+  ASSERT_EQ(slice[0], 0);
+  ASSERT_EQ(slice[1], 1);
+  ASSERT_EQ(slice[2], 2);
+  ASSERT_EQ(slice[3], 3);
+
+  remove_ordered(slice, 1);
+  ASSERT_EQ(slice.len, 3);
+  ASSERT_EQ(slice[0], 0);
+  ASSERT_EQ(slice[1], 2);
+  ASSERT_EQ(slice[2], 3);
+
+  EXPECT_EXCEPTION(remove_ordered(slice, 3), Exception);
+  EXPECT_EXCEPTION(remove_ordered(slice, -1), Exception);
+}
+
+UTEST(Array, remove_unordered) {
+  auto slice = make_array<int>(5);
+  defer(destroy(slice));
+
+  const int values[5] = {0, 1, 2, 3, 4};
+  copy(slice, make_slice(values));
+
+  remove_ordered(slice, 4);
+  ASSERT_EQ(slice.len, 4);
+  ASSERT_EQ(slice[0], 0);
+  ASSERT_EQ(slice[1], 1);
+  ASSERT_EQ(slice[2], 2);
+  ASSERT_EQ(slice[3], 3);
+
+  remove_ordered(slice, 1);
+  ASSERT_EQ(slice.len, 3);
+  ASSERT_EQ(slice[0], 0);
+  ASSERT_EQ(slice[1], 2);
+  ASSERT_EQ(slice[2], 3);
+
+  EXPECT_EXCEPTION(remove_ordered(slice, 3), Exception);
+  EXPECT_EXCEPTION(remove_ordered(slice, -1), Exception);
 }
 
 // -----------------------------------------------------------------------------
