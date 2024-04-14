@@ -374,7 +374,7 @@ Allocator make_alloc(SlabArena& _arena) {
 // FILE I/O
 // -----------------------------------------------------------------------------
 
-DynSlice<u8> read_bytes(const char* _path, Allocator& _alloc) {
+Array<u8> read_bytes(const char* _path, Allocator& _alloc) {
 #if defined(_MSC_VER)
   // We could use _CRT_SECURE_NO_WARNINGS but would have to put it in the header
   // file because some of the headers included there transitively pull in stdio.
@@ -399,11 +399,11 @@ DynSlice<u8> read_bytes(const char* _path, Allocator& _alloc) {
   return buf;
 }
 
-DynSlice<u8> read_bytes(const char* _path) {
+Array<u8> read_bytes(const char* _path) {
   return read_bytes(_path, ctx_alloc());
 }
 
-DynSlice<char> read_string(const char* _path, Allocator& _alloc) {
+Array<char> read_string(const char* _path, Allocator& _alloc) {
   static_assert(sizeof(char) == sizeof(u8));
 
   auto bytes = read_bytes(_path, _alloc);
@@ -411,6 +411,6 @@ DynSlice<char> read_string(const char* _path, Allocator& _alloc) {
   return {{(char*)bytes.data, bytes.len}, bytes.cap, bytes.alloc};
 }
 
-DynSlice<char> read_string(const char* _path) {
+Array<char> read_string(const char* _path) {
   return read_string(_path, ctx_alloc());
 }

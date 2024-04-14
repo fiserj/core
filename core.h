@@ -639,12 +639,12 @@ struct Slice<T, Dynamic> : ISlice<T> {
 
 // Alias for a dynamic slice of elements of type `T`.
 template <typename T>
-using DynSlice = Slice<T, Dynamic>;
+using Array = Slice<T, Dynamic>;
 
 // Makes a dynamic slice of specified length and capacity, using the provided
 // allocator.
 template <typename T>
-DynSlice<T> make_slice(Size _len, Size _cap, Allocator& _alloc) {
+Array<T> make_slice(Size _len, Size _cap, Allocator& _alloc) {
   debug_assert(_len >= 0 && _len <= _cap);
   debug_assert(_alloc.alloc);
 
@@ -660,7 +660,7 @@ DynSlice<T> make_slice(Size _len, Size _cap, Allocator& _alloc) {
 // Makes a dynamic slice of specified length and capacity, using the current
 // context's allocator.
 template <typename T, typename S>
-DynSlice<T> make_slice(S _len, Size _cap) {
+Array<T> make_slice(S _len, Size _cap) {
   static_assert(is_same<S, Size> || is_same<S, decltype(0)>);
 
   return make_slice<T>(Size(_len), _cap, ctx_alloc());
@@ -669,14 +669,14 @@ DynSlice<T> make_slice(S _len, Size _cap) {
 // Makes a dynamic slice of specified length, using the current context's
 // allocator. Capacity is set equal to the length.
 template <typename T>
-DynSlice<T> make_slice(Size _len) {
+Array<T> make_slice(Size _len) {
   return make_slice<T>(_len, _len);
 }
 
 // Makes a dynamic slice of specified length, using the provided allocator.
 // Capacity is set equal to the length.
 template <typename T>
-DynSlice<T> make_slice(Size _len, Allocator& _alloc) {
+Array<T> make_slice(Size _len, Allocator& _alloc) {
   return make_slice<T>(_len, _len, _alloc);
 }
 
@@ -707,13 +707,13 @@ Slice<T> make_slice(decltype(nullptr), Size) = delete;
 
 // Destroys the dynamic slice and frees the memory it points to.
 template <typename T>
-void destroy(DynSlice<T>& _slice) {
+void destroy(Array<T>& _slice) {
   free(*_slice.alloc, _slice.data, _slice.cap * sizeof(T));
 }
 
 // Ensures that the slice has enough capacity to store at least `_cap` elements.
 template <typename T>
-void reserve(DynSlice<T>& _slice, Size _cap) {
+void reserve(Array<T>& _slice, Size _cap) {
   if (_cap <= _slice.cap) {
     return;
   }
@@ -724,7 +724,7 @@ void reserve(DynSlice<T>& _slice, Size _cap) {
 
 // Resizes the slice to the specified length.
 template <typename T>
-void resize(DynSlice<T>& _slice, Size _len) {
+void resize(Array<T>& _slice, Size _len) {
   debug_assert(_len >= 0);
 
   if (_len <= _slice.len) {
@@ -751,7 +751,7 @@ void copy(const ISlice<T>& _dst, const ISlice<Const<T>>& _src) {
 
 // Appends a single value to the dynamic slice.
 template <typename T>
-void append(DynSlice<T>& _slice, const T& _value) {
+void append(Array<T>& _slice, const T& _value) {
   if (_slice.len == _slice.cap) {
     reserve(_slice, detail::next_cap(_slice.cap, _slice.len + 1));
   }
@@ -761,7 +761,7 @@ void append(DynSlice<T>& _slice, const T& _value) {
 
 // Appends multiple values to the dynamic slice.
 template <typename T>
-void append(DynSlice<T>& _slice, const ISlice<Const<T>>& _values) {
+void append(Array<T>& _slice, const ISlice<Const<T>>& _values) {
   const Size low  = _slice.len;
   const Size high = _slice.len + _values.len;
 
@@ -775,7 +775,7 @@ void append(DynSlice<T>& _slice, const ISlice<Const<T>>& _values) {
 
 // Removes the last element from the dynamic slice.
 template <typename T>
-T& pop(DynSlice<T>& _slice) {
+T& pop(Array<T>& _slice) {
   check_bounds(_slice.len > 0);
   return _slice.data[--_slice.len];
 }
@@ -783,7 +783,7 @@ T& pop(DynSlice<T>& _slice) {
 // Removes the i-th element from the dynamic slice and shifts the rest of the
 // elements to the left, thus preserving the order.
 template <typename T>
-void remove_ordered(DynSlice<T>& _slice, Index _i) {
+void remove_ordered(Array<T>& _slice, Index _i) {
   check_bounds(_i >= 0 && _i < _slice.len);
 
   if (_i != _slice.len - 1) {
@@ -796,7 +796,7 @@ void remove_ordered(DynSlice<T>& _slice, Index _i) {
 // Removes the i-th element from the dynamic slice, without preserving the
 // order.
 template <typename T>
-void remove_unordered(DynSlice<T>& _slice, Index _i) {
+void remove_unordered(Array<T>& _slice, Index _i) {
   check_bounds(_i >= 0 && _i < _slice.len);
 
   if (_i != _slice.len - 1) {
@@ -853,7 +853,7 @@ Allocator make_alloc(Arena& _arena);
 
 // Simple growable arena that allocates memory in fixed-size owned slabs.
 struct SlabArena {
-  DynSlice<Slice<u8>> slabs;
+  Array<Slice<u8>> slabs;
   Index               head;
 };
 
@@ -932,19 +932,19 @@ bool empty(const Ring<T>& _ring) {
 
 // Reads the entire file into a dynamic slice of bytes. Uses the provided
 // allocator.
-DynSlice<u8> read_bytes(const char* _path, Allocator& _alloc);
+Array<u8> read_bytes(const char* _path, Allocator& _alloc);
 
 // Reads the entire file into a dynamic slice of bytes. Uses the current
 // context's allocator
-DynSlice<u8> read_bytes(const char* _path);
+Array<u8> read_bytes(const char* _path);
 
 // Reads the entire file into a dynamic slice of characters and appends a null
 // terminator. Uses the provided allocator.
-DynSlice<char> read_string(const char* _path, Allocator& _alloc);
+Array<char> read_string(const char* _path, Allocator& _alloc);
 
 // Reads the entire file into a dynamic slice of characters and appends a null
 // terminator. Uses the current context's allocator.
-DynSlice<char> read_string(const char* _path);
+Array<char> read_string(const char* _path);
 
 // -----------------------------------------------------------------------------
 // 2D VECTOR
