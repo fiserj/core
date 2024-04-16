@@ -683,6 +683,7 @@ constexpr Size next_cap(Size _cap, Size _req) {
 }
 
 } // namespace detail
+
 // Dynamic (growable) array of elements of type `T`. Owns the memory it points
 // to. Retains a pointer to the allocator that was used to allocate its memory.
 template <typename T>
