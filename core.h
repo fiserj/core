@@ -642,32 +642,32 @@ constexpr Slice<T> make_slice(decltype(nullptr), Size) = delete;
 // Copies elements from `_src` slice to `_dst` slice. Copies the minimum of the
 // two slice lengths.
 template <typename T>
-void copy(const Slice<T>& _dst, const Slice<Const<T>>& _src) {
+void copy(Slice<T> _dst, Slice<Const<T>> _src) {
   memcpy(_dst.data, _src.data, size_t(min(_dst.len, _src.len)) * sizeof(T));
 }
 
 // Returns `true` if the slice is empty, `false` otherwise.
 template <typename T>
-constexpr bool empty(const Slice<T>& _slice) {
+constexpr bool empty(Slice<T> _slice) {
   debug_assert(_slice.len >= 0);
   return _slice.len == 0;
 }
 
 // Returns a pointer to the first element of the slice.
 template <typename T>
-constexpr T* begin(const Slice<T>& _slice) {
+constexpr T* begin(Slice<T> _slice) {
   return _slice.data;
 }
 
 // Returns a pointer to the "one-past-the-end" element of the slice.
 template <typename T>
-constexpr T* end(const Slice<T>& _slice) {
+constexpr T* end(Slice<T> _slice) {
   return _slice.data + _slice.len;
 }
 
 // Returns the number of bytes used by the slice.
 template <typename T>
-constexpr size_t bytes(const Slice<T>& _slice) {
+constexpr size_t bytes(Slice<T> _slice) {
   return size_t(_slice.len) * sizeof(T);
 }
 
@@ -780,7 +780,7 @@ void append(Array<T>& _slice, const T& _value) {
 
 // Appends multiple values to the dynamic slice.
 template <typename T>
-void append(Array<T>& _slice, const Slice<Const<T>>& _values) {
+void append(Array<T>& _slice, Slice<Const<T>> _values) {
   const Size low  = _slice.len;
   const Size high = _slice.len + _values.len;
 
