@@ -940,6 +940,40 @@ void reverse(Slice<T> _slice) {
   }
 }
 
+// Merges two sorted sequences into a single sorted sequence using the provided
+// comparison function. The destination sequence must have enough capacity to
+// hold all elements from both source sequences. The comparator function must
+// return `true` if the first argument should precede the second one in the
+// merged sequence.
+template <typename T, typename Comp>
+void merge(Slice<T> _dst, Slice<const T> _src_0, Slice<const T> _src_1, Comp _comp) {
+  panic_if(_dst.len < _src_0.len + _src_1.len, "Destination sequence has insufficient capacity.");
+
+  Index i0 = 0;
+  Index i1 = 0;
+  Index d  = 0;
+
+  for (; i0 < _src_0.len; d++) {
+    if (i1 == _src_1.len) {
+      copy(_dst(d, _), _src_0(i0, _));
+      break;
+    }
+
+    if (_comp(_src_1[i1], _src_0[i0])) {
+      _dst[d] = _src_1[i1++];
+    } else {
+      _dst[d] = _src_0[i0++];
+    }
+  }
+
+  copy(_dst(d, _), _src_1(i1, _));
+}
+
+template <typename T>
+void merge(Slice<T> _dst, Slice<const T> _src_0, Slice<const T> _src_1) {
+  merge(_dst, _src_0, _src_1, [](const T& _a, const T& _b) { return _a < _b; });
+}
+
 // -----------------------------------------------------------------------------
 // FILE I/O
 // -----------------------------------------------------------------------------

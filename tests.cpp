@@ -728,6 +728,33 @@ UTEST(ranges, reverse) {
   ASSERT_EQ(e.len, 0);
 }
 
+UTEST(ranges, merge) {
+  const auto test_merge = [&](auto _src0, auto _src1, auto _expected) {
+    i32 dst01[16] = {};
+    merge(make_slice(dst01), _src0, _src1);
+    ASSERT_EQ(memcmp(dst01, _expected.data, bytes(_src0) + bytes(_src1)), 0);
+
+    i32 dst10[16] = {};
+    merge(make_slice(dst10), _src1, _src0);
+    ASSERT_EQ(memcmp(dst10, _expected.data, bytes(_src0) + bytes(_src1)), 0);
+  };
+
+  const i32 e[6] = {1, 2, 3, 4, 5, 6};
+
+  const i32 a0[3] = {1, 3, 5};
+  const i32 a1[3] = {2, 4, 6};
+  test_merge(make_slice(a0), make_slice(a1), make_slice(e));
+
+  const i32 b0[3] = {1, 2, 3};
+  const i32 b1[3] = {4, 5, 6};
+  test_merge(make_slice(b0), make_slice(b1), make_slice(e));
+
+  const i32 c0[6] = {1, 2, 3, 4, 5, 6};
+  test_merge(make_slice(c0), Slice<const i32>{}, make_slice(e));
+
+  test_merge(Slice<const i32>{}, Slice<const i32>{}, Slice<const i32>{});
+}
+
 // -----------------------------------------------------------------------------
 // 2D VECTOR
 // -----------------------------------------------------------------------------
