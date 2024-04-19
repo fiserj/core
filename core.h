@@ -922,6 +922,25 @@ constexpr bool empty(const Ring<T>& _ring) {
 }
 
 // -----------------------------------------------------------------------------
+// RANGE UTILITIES
+// -----------------------------------------------------------------------------
+
+// Reverses the order of the elements in the slice.
+template <typename T>
+void reverse(Slice<T> _slice) {
+  if (empty(_slice)) {
+    return;
+  }
+
+  Index i = 0;
+  Index j = _slice.len;
+
+  for (--j; i < j; i++, --j) {
+    swap(_slice[i], _slice[j]);
+  }
+}
+
+// -----------------------------------------------------------------------------
 // FILE I/O
 // -----------------------------------------------------------------------------
 
