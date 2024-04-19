@@ -733,96 +733,96 @@ Array<T> make_array(Size _len, Allocator& _alloc) {
 
 // Destroys the dynamic array and frees the memory it points to.
 template <typename T>
-void destroy(Array<T>& _slice) {
-  free(*_slice.alloc, _slice.data, _slice.cap * sizeof(T));
+void destroy(Array<T>& _array) {
+  free(*_array.alloc, _array.data, _array.cap * sizeof(T));
 }
 
 // Ensures that the array has enough capacity to store at least `_cap` elements.
 template <typename T>
-void reserve(Array<T>& _slice, Size _cap) {
-  if (_cap <= _slice.cap) {
+void reserve(Array<T>& _array, Size _cap) {
+  if (_cap <= _array.cap) {
     return;
   }
 
-  _slice.data = (T*)reallocate(*_slice.alloc, _slice.data, _slice.cap * sizeof(T), _cap * sizeof(T), alignof(T));
-  _slice.cap  = _cap;
+  _array.data = (T*)reallocate(*_array.alloc, _array.data, _array.cap * sizeof(T), _cap * sizeof(T), alignof(T));
+  _array.cap  = _cap;
 }
 
-// Resizes the slice to the specified length.
+// Resizes the array to the specified length.
 template <typename T>
-void resize(Array<T>& _slice, Size _len) {
+void resize(Array<T>& _array, Size _len) {
   debug_assert(_len >= 0);
 
-  if (_len <= _slice.len) {
-    _slice.len = _len;
+  if (_len <= _array.len) {
+    _array.len = _len;
     return;
   }
 
-  if (_len <= _slice.cap) {
-    memset(_slice.data + _slice.len, 0, size_t(_len - _slice.len) * sizeof(T));
-    _slice.len = _len;
+  if (_len <= _array.cap) {
+    memset(_array.data + _array.len, 0, size_t(_len - _array.len) * sizeof(T));
+    _array.len = _len;
     return;
   }
 
-  reserve(_slice, detail::next_cap(_slice.cap, _len));
-  _slice.len = _len;
+  reserve(_array, detail::next_cap(_array.cap, _len));
+  _array.len = _len;
 }
 
-// Appends a single value to the dynamic slice.
+// Appends a single value to the dynamic array.
 template <typename T>
-void append(Array<T>& _slice, const T& _value) {
-  if (_slice.len == _slice.cap) {
-    reserve(_slice, detail::next_cap(_slice.cap, _slice.len + 1));
+void append(Array<T>& _array, const T& _value) {
+  if (_array.len == _array.cap) {
+    reserve(_array, detail::next_cap(_array.cap, _array.len + 1));
   }
 
-  _slice.data[_slice.len++] = _value;
+  _array.data[_array.len++] = _value;
 }
 
-// Appends multiple values to the dynamic slice.
+// Appends multiple values to the dynamic array.
 template <typename T>
-void append(Array<T>& _slice, Slice<Const<T>> _values) {
-  const Size low  = _slice.len;
-  const Size high = _slice.len + _values.len;
+void append(Array<T>& _array, Slice<Const<T>> _values) {
+  const Size low  = _array.len;
+  const Size high = _array.len + _values.len;
 
-  if (high >= _slice.cap) {
-    reserve(_slice, detail::next_cap(_slice.cap, high));
+  if (high >= _array.cap) {
+    reserve(_array, detail::next_cap(_array.cap, high));
   }
 
-  _slice.len = high;
-  copy(_slice(low, high), _values);
+  _array.len = high;
+  copy(_array(low, high), _values);
 }
 
-// Removes the last element from the dynamic slice.
+// Removes the last element from the dynamic array.
 template <typename T>
-T& pop(Array<T>& _slice) {
-  check_bounds(_slice.len > 0);
-  return _slice.data[--_slice.len];
+T& pop(Array<T>& _array) {
+  check_bounds(_array.len > 0);
+  return _array.data[--_array.len];
 }
 
-// Removes the i-th element from the dynamic slice and shifts the rest of the
+// Removes the i-th element from the dynamic array and shifts the rest of the
 // elements to the left, thus preserving the order.
 template <typename T>
-void remove_ordered(Array<T>& _slice, Index _i) {
-  check_bounds(_i >= 0 && _i < _slice.len);
+void remove_ordered(Array<T>& _array, Index _i) {
+  check_bounds(_i >= 0 && _i < _array.len);
 
-  if (_i != _slice.len - 1) {
-    memmove(_slice.data + _i, _slice.data + _i + 1, size_t(_slice.len - _i - 1) * sizeof(T));
+  if (_i != _array.len - 1) {
+    memmove(_array.data + _i, _array.data + _i + 1, size_t(_array.len - _i - 1) * sizeof(T));
   }
 
-  _slice.len--;
+  _array.len--;
 }
 
-// Removes the i-th element from the dynamic slice, without preserving the
+// Removes the i-th element from the dynamic array, without preserving the
 // order.
 template <typename T>
-void remove_unordered(Array<T>& _slice, Index _i) {
-  check_bounds(_i >= 0 && _i < _slice.len);
+void remove_unordered(Array<T>& _array, Index _i) {
+  check_bounds(_i >= 0 && _i < _array.len);
 
-  if (_i != _slice.len - 1) {
-    _slice.data[_i] = _slice.data[_slice.len - 1];
+  if (_i != _array.len - 1) {
+    _array.data[_i] = _array.data[_array.len - 1];
   }
 
-  _slice.len--;
+  _array.len--;
 }
 
 // -----------------------------------------------------------------------------
