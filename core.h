@@ -945,8 +945,12 @@ void reverse(Slice<T> _slice) {
 // hold all elements from both source sequences. The comparator function must
 // return `true` if the first argument should precede the second one in the
 // merged sequence.
-template <typename T, typename Comp>
-void merge(Slice<T> _dst, Slice<const T> _src_0, Slice<const T> _src_1, Comp _comp) {
+//
+// Note that the three different types are needed as apparently the compiler
+// cannot deduce the type if we do something like
+// `Slice<NonConst<T>> _dst, Slice<Const<T>> _src_0, Slice<Const<T>> _src_1`.
+template <typename T, typename U, typename V, typename Comp>
+void merge(Slice<T> _dst, Slice<U> _src_0, Slice<V> _src_1, Comp _comp) {
   panic_if(_dst.len < _src_0.len + _src_1.len, "Destination sequence has insufficient capacity.");
 
   Index i0 = 0;
