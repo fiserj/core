@@ -425,6 +425,33 @@ UTEST(Slice, make_slice_array) {
   ASSERT_EQ(slice.len, 3);
 }
 
+UTEST(Slice, make_slice_array_literal) {
+  const i32 data[] = {0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+  auto first = make_slice((i32[3]){1, 2, 3});
+  ASSERT_NE(first.data, (i32*)nullptr);
+  ASSERT_EQ(first.len, 3);
+  ASSERT_EQ(memcmp(first.data, data + 3, sizeof(i32) * 3), 0);
+
+  auto second = make_slice((i32[3]){4, 5, 6});
+  ASSERT_NE(second.data, (i32*)nullptr);
+  ASSERT_NE(second.data, first.data);
+  ASSERT_EQ(second.len, 3);
+  ASSERT_EQ(memcmp(second.data, data + 6, sizeof(i32) * 3), 0);
+
+  auto third = make_slice((i32[]){7, 8, 9});
+  ASSERT_NE(third.data, (i32*)nullptr);
+  ASSERT_NE(third.data, first.data);
+  ASSERT_EQ(third.len, 3);
+  ASSERT_EQ(memcmp(third.data, data + 9, sizeof(i32) * 3), 0);
+
+  auto fourth = make_slice((i32[3]){});
+  ASSERT_NE(fourth.data, (i32*)nullptr);
+  ASSERT_NE(fourth.data, first.data);
+  ASSERT_EQ(fourth.len, 3);
+  ASSERT_EQ(memcmp(fourth.data, data, sizeof(i32) * 3), 0);
+}
+
 UTEST(Slice, copy) {
   auto src = make_array<int>(3);
   defer(destroy(src));

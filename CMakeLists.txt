@@ -52,8 +52,11 @@ if(CORE_CONFIG_THROW_EXCEPTION_ON_PANIC)
 endif()
 
 if(MSVC)
-  target_compile_options(${NAME} PRIVATE
-    /W4
+  target_compile_options(${NAME}
+    PRIVATE
+      /W4
+    PUBLIC
+      /wd4576
   )
 else()
   target_compile_options(${NAME} PRIVATE
@@ -109,6 +112,7 @@ if(CORE_BUILD_TESTS)
   if(MSVC)
     target_compile_options(${NAME} PRIVATE
       /W4
+      /wd4576
     )
   else()
     target_compile_options(${NAME} PRIVATE

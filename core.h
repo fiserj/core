@@ -624,6 +624,37 @@ constexpr Slice<T> make_slice(T (&_array)[N]) {
   return slice;
 }
 
+namespace detail {
+
+template <typename T, Size N, auto Unique>
+struct StackStorage {
+  T data[N];
+};
+
+} // namespace detail
+
+// Makes a non-owning slice, wrapping a statically-sized array literal. See
+// https://github.com/DaemonSnake/unconstexpr-cpp20?tab=readme-ov-file#unique-instantiation-template
+// for the rationale behind the `Unique` parameter. It is used to ensure that
+// we can create unique stack memory for every call of the function, even if the
+// type `T` and the size `N` are the same.
+//
+// Note that array / compound literals aren't standard C++, but they are
+// somewhat supported by most compilers. On MSVC, you need to compile with
+// `/wd4576` if you want to use this function (if you use the CMake setup, then
+// this is already done for you).
+template <typename T, Size N, auto Unique = [] {}>
+Slice<T> make_slice(T (&&_array)[N]) {
+  static detail::StackStorage<T, N, Unique> storage{};
+  memcpy(storage.data, _array, N * sizeof(T));
+
+  Slice<T> slice;
+  slice.data = storage.data;
+  slice.len  = N;
+
+  return slice;
+}
+
 // Makes a non-owning slice, wrapping a pointer to the first element and the
 // associated number of elements.
 template <typename T>
