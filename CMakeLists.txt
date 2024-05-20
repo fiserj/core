@@ -118,6 +118,12 @@ if(CORE_BUILD_TESTS)
     target_compile_options(${NAME} PRIVATE
       -Wall
       -Wextra
+      -fsanitize=address
+      -fno-omit-frame-pointer
+    )
+
+    target_link_options(${NAME} PRIVATE
+      -fsanitize=address
     )
   endif()
 
