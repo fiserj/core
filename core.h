@@ -1227,6 +1227,13 @@ constexpr bool overlap(const Rect& _a, const Rect& _b) {
     _a.max.y >= _b.min.y);
 }
 
+// Checks if a point is inside an axis-aligned rectangle.
+constexpr bool inside(Vec2 _p, Rect _r) {
+  return (
+    (_p.x >= _r.min.x && _p.x <= _r.max.x) &&
+    (_p.y >= _r.min.y && _p.y <= _r.max.y));
+}
+
 // -----------------------------------------------------------------------------
 // 2D TRANSFORM
 // -----------------------------------------------------------------------------

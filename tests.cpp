@@ -1147,6 +1147,22 @@ UTEST(Rect, overlap_rect) {
   ASSERT_TRUE(overlap(a, d));
 }
 
+UTEST(Rect, inside) {
+  const Rect r = {{-1.0f, 0.0f}, {3.0f, 2.0f}};
+
+  ASSERT_TRUE(inside({0.0f, 0.0f}, r));
+  ASSERT_TRUE(inside(center(r), r));
+  ASSERT_TRUE(inside(tl(r), r));
+  ASSERT_TRUE(inside(tr(r), r));
+  ASSERT_TRUE(inside(bl(r), r));
+  ASSERT_TRUE(inside(br(r), r));
+
+  ASSERT_FALSE(inside(tl(r) - Vec2{1.0f, 0.0}, r));
+  ASSERT_FALSE(inside(tl(r) + Vec2{0.0f, 1.0}, r));
+  ASSERT_FALSE(inside(br(r) + Vec2{1.0f, 0.0}, r));
+  ASSERT_FALSE(inside(br(r) - Vec2{0.0f, 1.0}, r));
+}
+
 // -----------------------------------------------------------------------------
 // 2D TRANSFORM
 // -----------------------------------------------------------------------------
