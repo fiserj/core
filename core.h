@@ -1235,6 +1235,51 @@ constexpr bool inside(Vec2 _p, Rect _r) {
 }
 
 // -----------------------------------------------------------------------------
+// 2D LINE SEGMENT
+// -----------------------------------------------------------------------------
+
+// 2D line segment.
+struct LineSeg {
+  Vec2 p0; // Start point.
+  Vec2 p1; // End point.
+};
+
+// Computes line segment's length.
+inline f32 length(LineSeg _l) {
+  return length(_l.p1 - _l.p0);
+}
+
+// Checks if two line segments intersect.
+constexpr bool intersect(LineSeg _l0, LineSeg _l1) {
+  const Vec2 a = _l0.p1 - _l0.p0;
+  const Vec2 b = _l1.p1 - _l1.p0;
+  const Vec2 c = _l0.p0 - _l1.p0;
+
+  const f32 d = cross2(a, b);
+  if (d == 0.0f) {
+    return false;
+  }
+
+  const f32 s = cross2(a, c) / d;
+  const f32 t = cross2(b, c) / d;
+
+  return (s >= 0.0f && s <= 1.0f && t >= 0.0f && t <= 1.0f);
+}
+
+// Checks if a line segment and an axis-aligned rectangle intersect.
+constexpr bool intersect(LineSeg _l, Rect _r) {
+  if (inside(_l.p0, _r) || inside(_l.p1, _r)) {
+    return true;
+  }
+
+  return (
+    intersect(_l, LineSeg{tl(_r), tr(_r)}) ||
+    intersect(_l, LineSeg{tr(_r), br(_r)}) ||
+    intersect(_l, LineSeg{br(_r), bl(_r)}) ||
+    intersect(_l, LineSeg{bl(_r), tl(_r)}));
+}
+
+// -----------------------------------------------------------------------------
 // 2D TRANSFORM
 // -----------------------------------------------------------------------------
 

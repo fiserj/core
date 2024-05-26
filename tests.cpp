@@ -1164,6 +1164,60 @@ UTEST(Rect, inside) {
 }
 
 // -----------------------------------------------------------------------------
+// 2D LINE SEGMENT
+// -----------------------------------------------------------------------------
+
+UTEST(LineSeg, length) {
+  const LineSeg a = {{0.0f, 0.0f}, {2.0f, 0.0f}};
+  ASSERT_EQ(length(a), 2.0f);
+
+  const LineSeg b = {{0.0f, 0.0f}, {0.0f, 3.0f}};
+  ASSERT_EQ(length(b), 3.0f);
+
+  const LineSeg c = {{1.0f, 2.0f}, {4.0f, 6.0f}};
+  ASSERT_EQ(length(c), 5.0f);
+
+  const LineSeg d = {};
+  ASSERT_EQ(length(d), 0.0f);
+}
+
+UTEST(LineSeg, intersect_line_seg) {
+  const LineSeg a = {{-1.0f, 0.0f}, {1.0f, 0.0f}};
+  const LineSeg b = {{0.0f, -1.0f}, {0.0f, 1.0f}};
+  ASSERT_TRUE(intersect(a, b));
+
+  LineSeg c = {{-1.0f, -1.0f}, {-1.0f, 1.0f}};
+  ASSERT_TRUE(intersect(a, c));
+
+  LineSeg d = {{-1.0f, 0.0f}, {-2.0f, -2.0f}};
+  ASSERT_TRUE(intersect(a, d));
+
+  LineSeg e = {{-1.0f, -1.0f}, {1.0f, 1.0f}};
+  LineSeg f = {{0.1e-3f, 0.0f}, {1.0f, 0.0f}};
+  ASSERT_FALSE(intersect(e, f));
+
+  LineSeg g = {{0.0f, 0.0f}, {1.0f, 0.0f}};
+  LineSeg h = {{0.0f, 1.0f}, {1.0f, 1.0f}};
+  ASSERT_FALSE(intersect(g, h));
+}
+
+UTEST(LineSeg, intersect_rect) {
+  const Rect r = {{-1.0f, -1.0f}, {1.0f, 1.0f}};
+
+  const LineSeg a = {{-0.5f, 0.0f}, {0.5f, 0.0f}};
+  ASSERT_TRUE(intersect(a, r));
+
+  const LineSeg b = {{-2.0f, 0.0f}, {2.0f, 0.0f}};
+  ASSERT_TRUE(intersect(b, r));
+
+  const LineSeg c = {tr(r), tr(r) + Vec2{1.0f, 0.0f}};
+  ASSERT_TRUE(intersect(c, r));
+
+  const LineSeg d = {tl(r) + Vec2{0.0f, 1.0f}, tr(r) + Vec2{0.0f, 1.0f}};
+  ASSERT_FALSE(intersect(d, r));
+}
+
+// -----------------------------------------------------------------------------
 // 2D TRANSFORM
 // -----------------------------------------------------------------------------
 
