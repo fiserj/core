@@ -970,6 +970,20 @@ UTEST(Vec2, dot) {
   ASSERT_EQ(f, 0.0f);
 }
 
+UTEST(Vec2, cross2) {
+  const Vec2 a = {2.0f, 0.0f};
+  const Vec2 b = {0.0f, 3.0f};
+  const f32  c = cross2(a, b);
+
+  ASSERT_EQ(c, 6.0f);
+
+  const Vec2 d = {1.0f, 2.0f};
+  const Vec2 e = {-3.0f, 0.0f};
+  const f32  f = cross2(d, e);
+
+  ASSERT_EQ(f, 6.0f);
+}
+
 // -----------------------------------------------------------------------------
 // 1D RANGE
 // -----------------------------------------------------------------------------

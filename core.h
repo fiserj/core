@@ -1109,6 +1109,12 @@ constexpr f32 dot(Vec2 _u, Vec2 _v) {
   return _u.x * _v.x + _u.y * _v.y;
 }
 
+// Returns cross product of two 2D vectors (equal to the area of the
+// parallelogram spanned by them).
+constexpr f32 cross2(Vec2 _a, Vec2 _b) {
+  return _a.x * _b.y - _a.y * _b.x;
+}
+
 // -----------------------------------------------------------------------------
 // 1D RANGE
 // -----------------------------------------------------------------------------
