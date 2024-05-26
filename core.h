@@ -612,6 +612,12 @@ struct Slice {
   Slice<T> operator()(Index _low, OmittedTag) const {
     return operator()(_low, len);
   }
+
+  // Returns a subslice of the slice. `_low` is indexed from the back of the
+  // slice. `_high` is implicitly `len`.
+  Slice<T> operator()(detail::BackIndex _low, OmittedTag) const {
+    return operator()(len + _low.val, len);
+  }
 };
 
 // Makes a non-owning slice, wrapping a statically-sized array.

@@ -401,6 +401,7 @@ UTEST(Slice, subslicing) {
   ASSERT_EQ(slice(0, 2).len, 2);
   ASSERT_EQ(slice(_, 2).len, 2);
   ASSERT_EQ(slice(1, _).len, 2);
+  ASSERT_EQ(slice(len - 2, _).len, 2);
 
   EXPECT_EXCEPTION(slice(-1, 2), Exception);
   EXPECT_EXCEPTION(slice(2, 1), Exception);
